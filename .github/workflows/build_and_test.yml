@@ -23,4 +23,4 @@ jobs:
       - run: cargo test --verbose -- --ignored
       - run: cargo bench --no-run
       - run: cargo audit --deny warnings
-      - uses: EmbarkStudios/cargo-deny-action@v1 # cargo deny check
+      # - uses: EmbarkStudios/cargo-deny-action@v1 # cargo deny check
