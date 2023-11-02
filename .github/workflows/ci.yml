@@ -1,0 +1,12 @@
+name: Main CI Workflow
+
+on:
+  pull_request: # when a PR is submitted
+  workflow_dispatch: # can be invoked manually
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build_and_test:
+    uses: ./.github/workflows/build_and_test.yml
