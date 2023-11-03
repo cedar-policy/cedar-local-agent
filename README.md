@@ -27,7 +27,7 @@ Cedar local agent can be used in your application by depending on the `cedar-loc
 
 Add `cedar-local-agent` as a dependency in your `Cargo.toml` file. For example:
 
-```
+```toml
 [dependencies]
 cedar-local-agent = "0.1"
 ```
@@ -45,7 +45,7 @@ Schema: [`tests/data/sweets.schema.cedar.json`](./tests/data/sweets.schema.cedar
 
 Build a policy set:
 
-```
+```rust
 let policy_set_provider = PolicySetProvider::new(
     policy_set_provider::ConfigBuilder::default()
         .policy_set_path("tests/data/sweets.cedar")
@@ -57,7 +57,7 @@ let policy_set_provider = PolicySetProvider::new(
 
 Build an entity provider:
 
-```
+```rust
 let entity_provider = EntityProvider::new(
     entity_provider::ConfigBuilder::default()
         .entities_path("tests/data/sweets.entities.json")
@@ -70,7 +70,7 @@ let entity_provider = EntityProvider::new(
 
 Build the authorizer:
 
-```
+```rust
 let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
     AuthorizerConfigBuilder::default()
         .entity_provider(Arc::new(entity_provider))
@@ -82,7 +82,7 @@ let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
 
 Evaluate a decision:
 
-```
+```rust
 assert_eq!(
     authorizer
         .is_authorized(&Request::new(
@@ -104,7 +104,7 @@ The [`simple::Authorizer`](./src/public/simple.rs) `is_authorized` API takes a
 [`cedar request`](https://github.com/cedar-policy/cedar/tree/main/cedar-policy)
 and [`cedar entities`](https://github.com/cedar-policy/cedar/tree/main/cedar-policy) within the API.  
 
-```
+```rust
 pub async fn is_authorized(
     &self,
     request: &Request,
@@ -144,7 +144,7 @@ it has successfully or unsuccessfully updated the data for the provider.
 
 Sample usage of updating a policy set provider's data every sixty seconds:
 
-```
+```rust
 let (clock_ticker_signal_thread, receiver) = clock_ticker_task(Duration::from_secs(60));
 
 let policy_set_provider = Arc::new(PolicySetProvider::new(
@@ -177,7 +177,7 @@ Authorization events are included in tracing [`spans`](https://docs.rs/tracing/l
 Authorization events are default formatted using [`Open Cyber Security Format`](https://github.com/ocsf).
 Authorization events can optionally be filtered, formatted and routed directly to an authorization log. See example:
 
-```
+```rust
 // Dependencies must be included in the `Cargo.toml` file of the application
 // tracing, tracing-appender, tracing-subscriber
 
@@ -228,7 +228,7 @@ This file represents all policies for this application.
 Given the `schema`, `entities` and `policy_set` the application can use the `Authorizer` as provided in the usage above. 
 Here is a sample request and expected outcome:
 
-```
+```rust
  assert_eq!(
      authorizer
          .is_authorized(&Request::new(
@@ -241,7 +241,7 @@ Here is a sample request and expected outcome:
          .unwrap()
          .decision(),
      Decision::Deny
- )
+ );
  assert_eq!(
      authorizer
          .is_authorized(&Request::new(
@@ -254,7 +254,11 @@ Here is a sample request and expected outcome:
          .unwrap()
          .decision(),
      Decision::Allow
- )
+ );
 ```
 
 Feel free to refer to this sample application within the integration test located here: [`tests/lib.rs`](./tests/lib.rs).
+
+## License
+
+This project is licensed under the Apache-2.0 License.
