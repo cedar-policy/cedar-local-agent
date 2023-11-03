@@ -1,0 +1,102 @@
+[
+  {
+    "uid": { "__entity": { "type": "User", "id": "Eric"} },
+    "attrs": {},
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "User", "id": "Mike"} },
+    "attrs": {},
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "1"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Mike"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "2"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Mike"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "3"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Mike"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "4"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Mike"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "5"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Mike"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "6"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Eric"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "7"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Eric"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "8"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Eric"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "9"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Eric"}
+      }
+    },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "10"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Eric"}
+      }
+    },
+    "parents": []
+  }
+]
