@@ -1,0 +1,38 @@
+[package]
+name = "cedar-local-agent"
+edition = "2021"
+version = "1.0.0"
+
+publish = false
+
+[dependencies]
+# Utilities
+async-trait = "0.1.71"
+chrono = "0.4.26"
+derive_builder = "0.12.0"
+futures = { version = "0.3.28", features = ["std"] }
+fs2 = "0.4.3"
+once_cell = "1.18.0"
+rand = "0.8.5"
+serde = { version = "1.0.166", features = ["derive"] }
+serde_json = "1.0.100"
+serde_repr = "0.1.16"
+sha256 = "1.3.0"
+tokio = { version = "1.0", features = ["full", "signal", "sync", "parking_lot"] }
+uuid = {version = "1.4.1", features = ["v4"] }
+
+# Error, Logging, Tracing
+thiserror = "1.0.41"
+tracing = "0.1.37"
+tracing-core = "0.1.31"
+tracing-subscriber = "0.3.17"
+
+# Cedar
+cedar-policy = "2.3.0"
+cedar-policy-core = "2.3.0"
+cedar-policy-formatter = "2.3.0"
+cedar-policy-validator = "2.3.0"
+
+[dev-dependencies]
+tempfile = "3.8.0"
+
