@@ -12,7 +12,15 @@ ignore = []
 [bans]
 multiple-versions = "deny"
 deny = []
-skip = []
+skip = [
+    { name = "syn", version = "=1.0.109" }, # old dependency from derive_builder
+    { name = "darling", version = "=0.14.4" }, # old dependency from derive_builder
+    { name = "darling_macro", version = "=0.14.4" }, # old dependency from derive_builder
+    { name = "darling_core", version = "=0.14.4" }, # old dependency from derive_builder
+    { name = "bitflags", version = "=1.3.2" }, # old transitive dependency from cedar_policy_core
+    { name = "regex-syntax", version = "<=0.7.5" }, # old transitive dependency from cedar_policy_core
+    { name = "redox_syscall", version = "=0.2.16" }, # old transitive dependency from cedar_policy_core
+]
 skip-tree = []
 
 [sources]
@@ -28,7 +36,7 @@ allow = [
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
     "MIT",
-    "BSD-3-Clause",
-    "ISC",
+    "Unicode-DFS-2016",
+    "CC0-1.0",
 ]
 exceptions = []
