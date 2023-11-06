@@ -5,8 +5,9 @@ use cedar_policy::{Entities, Request, Response};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::join;
-use tracing::event;
+use tracing::{debug, error, event, info, instrument};
 use tracing_core::Level;
+use uuid::Uuid;
 
 use crate::public::log::schema::OpenCyberSecurityFramework;
 use crate::public::{log, EntityProviderError, SimpleEntityProvider};
@@ -93,11 +94,21 @@ where
     ///     .build()
     ///     .unwrap());
     /// ```
+    #[instrument(skip(configuration))]
     pub fn new(configuration: AuthorizerConfig<P, E>) -> Self {
+        let log_config = configuration.log_config.unwrap_or_default();
+        let entity_provider = configuration.entity_provider;
+        info!("Initialized Entity Provider");
+        let policy_set_provider = configuration.policy_set_provider;
+        info!("Initialized Policy Set Provider");
+        info!(
+            "Initialize Simple Authorizer: authorizer_id= {:?}",
+            log_config.requester
+        );
         Self {
-            entity_provider: configuration.entity_provider,
-            policy_set_provider: configuration.policy_set_provider,
-            log_config: configuration.log_config.unwrap_or_default(),
+            policy_set_provider,
+            entity_provider,
+            log_config,
         }
     }
 
@@ -106,11 +117,14 @@ where
     /// # Errors
     ///
     /// This function can error if either the entity or policy set providers fails.
+    #[instrument(fields(request_id = %Uuid::new_v4(), authorizer_id = %self.log_config.requester), skip_all, err(Debug))]
     pub async fn is_authorized(
         &self,
         request: &Request,
         entities: &Entities,
     ) -> Result<Response, AuthorizerError> {
+        info!("Received request, running is_authorized...");
+
         let entities_future = self.entity_provider.get_entities(request);
         let policy_set_future = self.policy_set_provider.get_policy_set(request);
         let (fetched_entities, policy_set) = join!(entities_future, policy_set_future);
@@ -128,11 +142,24 @@ where
             policy_set?.as_ref(),
             &merged_entities,
         );
+        info!("Fetched Authorization data from Policy Set Provider and Entity Provider");
 
+        info!("Generated OCSF log record.");
         self.log(request, &response, entities);
+
+        info!(
+            "Is_authorized completed: response_decision={:?}",
+            response.decision()
+        );
+        debug!(
+            "This decision was reached because: response_diagnostics={:?}",
+            response.diagnostics()
+        );
+
         Ok(response)
     }
 
+    #[instrument(skip_all)]
     fn log(&self, request: &Request, response: &Response, entities: &Entities) {
         event!(target: "cedar::simple::authorizer", Level::INFO, "{}",
             serde_json::to_string(

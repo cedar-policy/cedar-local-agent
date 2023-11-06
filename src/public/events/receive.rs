@@ -4,13 +4,14 @@ use std::sync::Arc;
 
 use tokio::sync::broadcast::Receiver;
 use tokio::task::JoinHandle;
-use tracing::{debug, error};
+use tracing::{debug, error, instrument};
 
 use crate::public::events::core::Event;
 use crate::public::UpdateProviderData;
 
 /// The `update_provider_data_thread` is a function that starts a background thread given a `Receiver`
 /// to handle `Event`s that will refresh the data within a provider.
+#[instrument(skip_all)]
 pub fn update_provider_data_task<T>(
     provider: Arc<T>,
     mut update_authority_events: Receiver<Event>,
@@ -23,10 +24,12 @@ where
             if let Ok(event) = update_authority_events.recv().await {
                 match provider.update_provider_data().await {
                     Ok(_) => {
-                        debug!("Successfully handled event: {event:?}");
+                        debug!(
+                            "Successfully handled event for updating provider data: event={event:?}"
+                        );
                     }
                     Err(error) => {
-                        error!("Failed to handle event: {event:?}, {error:?}");
+                        error!("Failed to handle event for updating provider data: event={event:?}: error={error:?}");
                     }
                 }
             } else {

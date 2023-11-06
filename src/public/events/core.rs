@@ -10,7 +10,7 @@ use fs2::FileExt;
 use tokio::sync::broadcast;
 use tokio::sync::broadcast::Receiver;
 use tokio::task::JoinHandle;
-use tracing::{debug, error};
+use tracing::{debug, error, instrument};
 use uuid::Uuid;
 
 /// An `EventUuid` helpful for logging.
@@ -33,6 +33,7 @@ pub enum Event {
 /// `clock_ticker_task` will create a background thread that will send notification to a broadcast
 /// channel periodically.  The output will be a handle to this thread and the receiver of these
 /// events.
+#[instrument]
 pub fn clock_ticker_task(duration: Duration) -> (JoinHandle<()>, Receiver<Event>) {
     let (sender, receiver) = broadcast::channel(10);
 
@@ -43,10 +44,12 @@ pub fn clock_ticker_task(duration: Duration) -> (JoinHandle<()>, Receiver<Event>
             let event = Event::Clock(EventUuid(Uuid::new_v4().to_string()));
             match sender.send(event.clone()) {
                 Ok(_) => {
-                    debug!("Successfully broadcast event: {event:?}");
+                    debug!("Successfully broadcast clock ticker event: event={event:?}");
                 }
                 Err(error) => {
-                    error!("Failed to broadcast event: {event:?} : {error:?}");
+                    error!(
+                        "Failed to broadcast clock ticker event: event={event:?} : error={error:?}"
+                    );
                 }
             }
         }
@@ -60,6 +63,7 @@ pub fn clock_ticker_task(duration: Duration) -> (JoinHandle<()>, Receiver<Event>
 /// receiver of these events.
 ///
 /// The mechanism for detecting change within the file is a standard `SHA-256` digest.
+#[instrument]
 pub fn file_inspector_task(duration: Duration, path: String) -> (JoinHandle<()>, Receiver<Event>) {
     /// The `FileChangeInspector` tells the authority when policies on disk have changed.
     #[derive(Debug)]
@@ -82,6 +86,7 @@ pub fn file_inspector_task(duration: Duration, path: String) -> (JoinHandle<()>,
 
         /// `changed` returns true if the file has changed.
         /// It will return true on the first call after creating a `io::Error` instance.
+        #[instrument(skip(self), ret, err)]
         pub fn changed(&mut self) -> Result<bool, io::Error> {
             let mut file_data = String::new();
 
@@ -94,10 +99,12 @@ pub fn file_inspector_task(duration: Duration, path: String) -> (JoinHandle<()>,
 
             let calculated_hash = sha256::digest(file_data);
             if Some(calculated_hash.clone()) == self.hash {
+                debug!("Authorization data file has not changed");
                 return Ok(false);
             }
 
             self.hash = Some(calculated_hash);
+            debug!("Authorization data file has changed: hash={:?}", self.hash);
             Ok(true)
         }
     }
@@ -114,10 +121,12 @@ pub fn file_inspector_task(duration: Duration, path: String) -> (JoinHandle<()>,
 
                     match sender.send(event.clone()) {
                         Ok(_) => {
-                            debug!("Successfully broadcast event: {event:?}");
+                            debug!("Successfully notificated authorization data file has changed: event={event:?}");
                         }
                         Err(error) => {
-                            error!("Failed to broadcast event: {event:?} : {error:?}");
+                            error!(
+                                "Failed to notificate authorization data file has changed: event={event:?}: error={error:?}"
+                            );
                         }
                     }
                 }
