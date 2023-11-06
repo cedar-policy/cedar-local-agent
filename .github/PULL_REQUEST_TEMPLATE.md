@@ -19,6 +19,12 @@ I confirm that this PR (choose one, and delete the other options):
   version bumps).
 - [ ] Does not update the CHANGELOG because my change does not significantly impact released code.
 
+## Testing
+
+Add a description on how the code changes were tested, if applicable.
+
+Hint: run `./scripts/build_and_test.sh` script to validate your changes locally before submitting a PR.
+
 ## Disclaimer
 
 By submitting this pull request, I confirm that you can use, modify, copy, and redistribute this contribution, under the
