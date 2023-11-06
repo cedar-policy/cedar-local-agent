@@ -98,11 +98,11 @@ where
     pub fn new(configuration: AuthorizerConfig<P, E>) -> Self {
         let log_config = configuration.log_config.unwrap_or_default();
         let entity_provider = configuration.entity_provider;
-        info!("initialized Entity Provider");
+        info!("Initialized Entity Provider");
         let policy_set_provider = configuration.policy_set_provider;
-        info!("initialized Policy Set Provider");
+        info!("Initialized Policy Set Provider");
         info!(
-            "initialize Simple Authorizer: authorizer_id= {:?}",
+            "Initialize Simple Authorizer: authorizer_id= {:?}",
             log_config.requester
         );
         Self {
