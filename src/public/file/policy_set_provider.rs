@@ -25,6 +25,7 @@ use cedar_policy_core::parser::err::ParseErrors;
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;
+use tracing::{debug, info, instrument};
 
 use crate::public::{
     PolicySetProviderError, SimplePolicySetProvider, UpdateProviderData, UpdateProviderDataError,
@@ -104,10 +105,16 @@ impl PolicySetProvider {
     /// # Errors
     ///
     /// This function can error if the policy set path is invalid or the policy set data is malformed.
+    #[instrument(skip(configuration), err(Debug))]
     pub fn new(configuration: Config) -> Result<Self, ProviderError> {
         let policy_set_path = configuration.policy_set_path;
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))?;
         let policy_set = PolicySet::from_str(&policy_set_src)?;
+        let policy_ids = policy_set
+            .policies()
+            .map(cedar_policy::Policy::id)
+            .collect::<Vec<_>>();
+        debug!("Fetched Policy Set from file: file_path={policy_set_path:?}: policy_ids={policy_ids:?}");
 
         Ok(Self {
             policy_set_path,
@@ -119,6 +126,7 @@ impl PolicySetProvider {
 /// Implements the update provider data trait
 #[async_trait]
 impl UpdateProviderData for PolicySetProvider {
+    #[instrument(skip(self), err(Debug))]
     async fn update_provider_data(&self) -> Result<(), UpdateProviderDataError> {
         let policy_set_path = self.policy_set_path.clone();
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))
@@ -127,9 +135,15 @@ impl UpdateProviderData for PolicySetProvider {
             .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
         {
             let mut policy_set_guard = self.policy_set.write().await;
-            *policy_set_guard = Arc::new(policy_set);
+            *policy_set_guard = Arc::new(policy_set.clone());
         }
-
+        let policy_ids = policy_set
+            .policies()
+            .map(cedar_policy::Policy::id)
+            .collect::<Vec<_>>();
+        debug!(
+        "Fetched Policy Set from file: file_path={policy_set_path:?}: policy_ids={policy_ids:?}");
+        info!("Updated Policy Set Provider");
         Ok(())
     }
 }
@@ -139,6 +153,7 @@ impl UpdateProviderData for PolicySetProvider {
 #[async_trait]
 impl SimplePolicySetProvider for PolicySetProvider {
     /// Get Policy set.
+    #[instrument(skip_all, err(Debug))]
     async fn get_policy_set(&self, _: &Request) -> Result<Arc<PolicySet>, PolicySetProviderError> {
         Ok(self.policy_set.read().await.clone())
     }

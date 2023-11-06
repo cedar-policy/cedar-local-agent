@@ -54,37 +54,21 @@ pub enum Format {
     Unknown,
 }
 
-#[derive(Builder, Eq, PartialEq, Debug, Clone)]
+#[derive(Builder, Eq, PartialEq, Debug, Clone, Default)]
 #[builder(pattern = "owned", default, setter(into))]
 #[allow(clippy::struct_excessive_bools)]
 /// The `FieldSet` specifies which fields are to be logged
 pub struct FieldSet {
     /// A boolean specifying whether the principal field is to be logged
-    #[builder(default = "true")]
     pub principal: bool,
     /// A boolean specifying whether the resource field is to be logged
-    #[builder(default = "true")]
     pub resource: bool,
     /// A boolean specifying whether the action field is to be logged
-    #[builder(default = "true")]
     pub action: bool,
     /// A boolean specifying whether the context field is to be logged
-    #[builder(default = "true")]
     pub context: bool,
     /// A variant of the `FieldLevel` enum specifying which entity fields are to be logged
     pub entities: FieldLevel<Entities>,
-}
-
-impl Default for FieldSet {
-    fn default() -> Self {
-        Self {
-            principal: true,
-            resource: true,
-            action: true,
-            context: true,
-            entities: FieldLevel::default(),
-        }
-    }
 }
 
 /// The `FieldLevel` enum is used to specify which fields are to be logged from a entities object.
@@ -93,9 +77,9 @@ impl Default for FieldSet {
 #[derive(Default, Eq, PartialEq, Debug, Clone)]
 #[non_exhaustive]
 pub enum FieldLevel<T> {
+    #[default]
     /// No fields are logged
     None,
-    #[default]
     /// All fields are logged
     All,
     /// Only the provided set of fields are logged.
@@ -130,7 +114,7 @@ mod test {
         let log_configuration_two = ConfigBuilder::default().build().unwrap();
         let log_configuration_three = ConfigBuilder::default()
             .format(Format::OpenCyberSecurityFramework)
-            .field_set(FieldSetBuilder::default().principal(false).build().unwrap())
+            .field_set(FieldSetBuilder::default().principal(true).build().unwrap())
             .build()
             .unwrap();
 
@@ -202,9 +186,10 @@ mod test {
     #[test]
     fn field_set_defaults() {
         let field_set = FieldSet::default();
-        assert!(field_set.context);
-        assert!(field_set.principal);
-        assert!(field_set.action);
-        assert!(field_set.resource);
+        assert!(!field_set.context);
+        assert!(!field_set.principal);
+        assert!(!field_set.action);
+        assert!(!field_set.resource);
+        assert_eq!(field_set.entities, FieldLevel::None);
     }
 }
