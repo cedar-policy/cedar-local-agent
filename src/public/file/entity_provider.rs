@@ -25,6 +25,7 @@ use cedar_policy_core::entities::EntitiesError;
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;
+use tracing::{debug, info, instrument};
 
 use crate::public::{
     EntityProviderError, SimpleEntityProvider, UpdateProviderData, UpdateProviderDataError,
@@ -122,6 +123,7 @@ impl EntityProvider {
     ///
     /// This constructor will return a `EntityProvider` error if the applicable
     /// entity or schema data is not a valid path or improperly formatted.
+    #[instrument(skip(configuration), err(Debug))]
     pub fn new(configuration: Config) -> Result<Self, ProviderError> {
         let entities = if let Some(entities_path) = configuration.entities_path.as_ref() {
             let entities_file = File::open(entities_path)?;
@@ -129,16 +131,19 @@ impl EntityProvider {
             let entities = if let Some(schema_path) = configuration.schema_path.as_ref() {
                 let schema_file = File::open(schema_path)?;
                 let schema = Schema::from_file(schema_file)?;
-                Entities::from_json_file(entities_file, Some(&schema))?
+                let res = Entities::from_json_file(entities_file, Some(&schema))?;
+                debug!("Fetched Entities from file with Schema: entities_file_path={entities_path:?}: schema_file_path={schema_path:?}");
+                res
             } else {
-                Entities::from_json_file(entities_file, None)?
+                let res = Entities::from_json_file(entities_file, None)?;
+                debug!("Fetched Entities from file: entities_file_path={entities_path:?}");
+                res
             };
-
             entities
         } else {
+            debug!("No Entity defined at local file system");
             Entities::empty()
         };
-
         Ok(Self {
             entities_path: configuration.entities_path,
             schema_path: configuration.schema_path,
@@ -161,6 +166,7 @@ impl Default for EntityProvider {
 /// Implements the update provider data trait
 #[async_trait]
 impl UpdateProviderData for EntityProvider {
+    #[instrument(skip(self), err(Debug))]
     async fn update_provider_data(&self) -> Result<(), UpdateProviderDataError> {
         let entities = if let Some(entities_path) = self.entities_path.as_ref() {
             let entities_file = File::open(entities_path)
@@ -171,15 +177,20 @@ impl UpdateProviderData for EntityProvider {
                     .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
                 let schema = Schema::from_file(schema_file)
                     .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
-                Entities::from_json_file(entities_file, Some(&schema))
-                    .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?
+                let res = Entities::from_json_file(entities_file, Some(&schema))
+                    .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
+                debug!("Updated Entities from file with Schema: entities_file_path={entities_path:?}: schema_file_path={schema_path:?}");
+                res
             } else {
-                Entities::from_json_file(entities_file, None)
-                    .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?
+                let res = Entities::from_json_file(entities_file, None)
+                    .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
+                debug!("Updated Entities from file: entities_file_path={entities_path:?}");
+                res
             };
 
             entities
         } else {
+            debug!("No Entity defined at local file system");
             Entities::empty()
         };
 
@@ -187,7 +198,7 @@ impl UpdateProviderData for EntityProvider {
             let mut entities_data = self.entities.write().await;
             *entities_data = Arc::new(entities);
         }
-
+        info!("Updated Entity Provider");
         Ok(())
     }
 }
@@ -197,6 +208,7 @@ impl UpdateProviderData for EntityProvider {
 #[async_trait]
 impl SimpleEntityProvider for EntityProvider {
     /// Get Entities.
+    #[instrument(skip_all, err(Debug))]
     async fn get_entities(&self, _: &Request) -> Result<Arc<Entities>, EntityProviderError> {
         Ok(self.entities.read().await.clone())
     }
