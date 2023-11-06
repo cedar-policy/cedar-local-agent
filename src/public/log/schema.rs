@@ -1353,20 +1353,11 @@ mod test {
         let field_set = FieldSetBuilder::default().build().unwrap();
         let filtered_request = filter_request(&request, &entities, &field_set);
 
-        assert!(matches!(
-            filtered_request.principal,
-            EntityComponent::Concrete(_)
-        ));
-        assert!(matches!(
-            filtered_request.resource,
-            EntityComponent::Concrete(_)
-        ));
-        assert!(matches!(
-            filtered_request.action,
-            EntityComponent::Concrete(_)
-        ));
-        assert!(filtered_request.context.is_some());
-        assert!(filtered_request.entities.is_some());
+        assert_eq!(filtered_request.principal, EntityComponent::None);
+        assert_eq!(filtered_request.action, EntityComponent::None);
+        assert_eq!(filtered_request.resource, EntityComponent::None);
+        assert!(filtered_request.context.is_none());
+        assert!(filtered_request.entities.is_none());
     }
 
     #[test]
@@ -1405,8 +1396,8 @@ mod test {
         let entities = create_mock_entities();
         let filter_fn = |_entities: &Entities| -> Entities { Entities::empty() };
         let field_set = FieldSetBuilder::default()
-            .principal(false)
-            .context(false)
+            .principal(true)
+            .context(true)
             .entities(FieldLevel::Custom(filter_fn))
             .build()
             .unwrap();
@@ -1414,16 +1405,13 @@ mod test {
         let filtered_request = filter_request(&request, &entities, &field_set);
 
         assert!(matches!(
-            filtered_request.resource,
+            filtered_request.principal,
             EntityComponent::Concrete(_)
         ));
-        assert!(matches!(filtered_request.principal, EntityComponent::None));
-        assert!(filtered_request.context.is_none());
+        assert!(matches!(filtered_request.action, EntityComponent::None));
+        assert!(matches!(filtered_request.resource, EntityComponent::None));
 
-        assert_eq!(
-            filtered_request.resource,
-            EntityComponent::Concrete(request.resource().cloned().unwrap()),
-        );
+        assert_eq!(filtered_request.context, Some(request.to_string()));
         assert_eq!(filtered_request.entities, Some(Entities::empty()));
     }
 

@@ -214,7 +214,7 @@ mod test {
         assert!(result.is_ok());
         assert_eq!(result.unwrap().decision(), Decision::Deny);
         assert_eq!(authorizer.log_config.requester, DEFAULT_REQUESTER_NAME);
-        assert!(authorizer.log_config.field_set.principal);
+        assert!(!authorizer.log_config.field_set.principal);
     }
 
     #[derive(Debug, Default)]
