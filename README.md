@@ -16,14 +16,12 @@ implemented by customers.
 [`file::PolicySetProvider`](./src/public/file/policy_set_provider.rs), and an entity provider: 
 [`file::EntityProvider`](./src/public/file/entity_provider.rs).
 
-The `cedar-local-agent` will expand in capabilities in future releases.
-
 For more information about the Cedar language/project, please take a look
 at [cedarpolicy.com](https://www.cedarpolicy.com).
 
 ## Usage
 
-Cedar local agent can be used in your application by depending on the `cedar-local-agent` crate.
+Cedar Local Agent can be used in your application via the `cedar-local-agent` crate.
 
 Add `cedar-local-agent` as a dependency in your `Cargo.toml` file. For example:
 
@@ -101,8 +99,8 @@ assert_eq!(
 ## [`simple::Authorizer`](./src/public/simple.rs) `is_authorized` API Semantics
 
 The [`simple::Authorizer`](./src/public/simple.rs) `is_authorized` API takes a 
-[`cedar request`](https://github.com/cedar-policy/cedar/tree/main/cedar-policy)
-and [`cedar entities`](https://github.com/cedar-policy/cedar/tree/main/cedar-policy) within the API.  
+[`Cedar request`](https://github.com/cedar-policy/cedar/tree/main/cedar-policy)
+and [`Cedar entities`](https://github.com/cedar-policy/cedar/tree/main/cedar-policy) within the API.  
 
 ```rust
 pub async fn is_authorized(
