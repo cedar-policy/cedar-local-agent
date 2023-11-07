@@ -14,8 +14,8 @@ body:
       description: What component of Cedar Local Agent does this feature relate to?
       multiple: true
       options:
-        - Policy File Synchronization
-        - Policy Evaluation
+        - Policy file synchronization
+        - Policy evaluation
         - Logging
         - User level API changes
         - Internal refactors/changes

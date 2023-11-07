@@ -30,8 +30,8 @@ body:
       description: What part of Cedar Local Agent is this bug related to?
       multiple: true
       options:
-        - Policy File Synchronization
-        - Policy Evaluation
+        - Policy file synchronization
+        - Policy evaluation
         - Logging
         - Other
     validations:
