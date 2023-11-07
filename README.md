@@ -190,6 +190,43 @@ tracing_subscriber::registry()
     .expect("Logging Failed to Start, Exiting.");
 ```
 
+To filter authorization event logs, provide a log config to the authorizer with a `FieldSet` which includes the fields that are to be logged. By default if not explicitly configured, no fields will be logged.
+
+Sample usage of logging everything within the authorization request:
+```rust
+let log_config = 
+    log::ConfigBuilder::default()
+        .field_set(log::FieldSetBuilder::default()
+            .principal(true)
+            .action(true)
+            .resource(true)
+            .context(true)
+            .entities(log::FieldLevel::All)
+            .build()
+            .unwrap())
+    .build()
+    .unwrap();
+
+let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
+    AuthorizerConfigBuilder::default()
+        .entity_provider(...)
+        .policy_set_provider(...)
+        .log_config(log_config)
+        .build()
+        .unwrap(),
+);
+```
+### Note:
+
+Cedar does not at this time support extracting the `Context` from the `Request` struct since it is private, therefore it is extracted using `request.to_string()`. This is not ideal as this logs the entire request (Principal, Action, Resource, Context) instead of just the context. 
+
+In particular this brings two quirks:
+- If the `FieldSet` has principal and context set to true, then the resulting log will include the principal twice.
+- If the `FieldSet` has principal set to false and context set to true, then the resulting log will include principal anyway since it is included in the `request.to_string()` call required to extract the context.
+
+
+The above are not specific to principal and also occur with action and resource. A cedar github issue has been created to add a getter for the context on the cedar Request struct that will fix this: https://github.com/cedar-policy/cedar/issues/363
+
 ## Example application
 
 This project is based on a fictitious application that allows users to manage sweet boxes. There are two entities:
