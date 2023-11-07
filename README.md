@@ -190,7 +190,7 @@ tracing_subscriber::registry()
     .expect("Logging Failed to Start, Exiting.");
 ```
 
-To filter authorization event logs, provide a log config to the authorizer with a `FieldSet` which includes the fields that are to be logged. 
+To filter authorization event logs, provide a log config to the authorizer with a `FieldSet` which includes the fields that are to be logged. By default if not explicitly configured, no fields will be logged.
 
 Sample usage of logging everything within the authorization request:
 ```rust
@@ -222,7 +222,7 @@ Cedar does not at this time support extracting the `Context` from the `Request` 
 
 In particular this brings two quirks:
 - If the `FieldSet` has principal and context set to true, then the resulting log will include the principal twice.
-- If the `FieldSet` has principal set to false and context set to true, then the resulting log will include principal anyway since it is included in the request.to_string() call required to extract the context.
+- If the `FieldSet` has principal set to false and context set to true, then the resulting log will include principal anyway since it is included in the `request.to_string()` call required to extract the context.
 
 
 The above are not specific to principal and also occur with action and resource. A cedar github issue has been created to add a getter for the context on the cedar Request struct that will fix this: https://github.com/cedar-policy/cedar/issues/363
