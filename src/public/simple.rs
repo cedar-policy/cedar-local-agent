@@ -1,7 +1,7 @@
 //! Provides a simple authorizer that takes a `SimplePolicySetProvider` and a `SimpleEntityProvider`.
 use std::sync::Arc;
 
-use cedar_policy::{Entities, Request, Response};
+use cedar_policy::{Entities, Entity, Request, Response};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::join;
@@ -137,7 +137,7 @@ where
                 .cloned(),
         )
         .map_err(|e| AuthorizerError::General(Box::new(e)))?;
-        self.validate_request(&merged_entities)?;
+        validate_request(&merged_entities)?;
 
         let response = cedar_policy::Authorizer::new().is_authorized(
             request,
@@ -178,16 +178,16 @@ where
             ).unwrap_or_else(|_| "Failed to deserialize a known Open Cyber Security Framework string.".to_string()),
         );
     }
+}
 
-    fn validate_request(&self, entities: &Entities) -> Result<(), AuthorizerError> {
-        let num_entities = entities.iter().map(|e| e.uid()).collect::<Vec<_>>().len();
-        if num_entities > MAX_ENTITIES_COUNT {
-            return Err(AuthorizerError::General(Box::new(ValidationError(
-                String::from("Number of entities exceeded max of {}"),
-            ))));
-        }
-        Ok(())
+fn validate_request(entities: &Entities) -> Result<(), AuthorizerError> {
+    let num_entities = entities.iter().map(Entity::uid).count();
+    if num_entities > MAX_ENTITIES_COUNT {
+        return Err(AuthorizerError::General(Box::new(ValidationError(
+            String::from("Number of entities exceeded max of {}"),
+        ))));
     }
+    Ok(())
 }
 
 #[cfg(test)]
