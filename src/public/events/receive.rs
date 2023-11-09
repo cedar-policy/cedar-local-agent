@@ -23,7 +23,7 @@ where
         loop {
             if let Ok(event) = update_authority_events.recv().await {
                 match provider.update_provider_data().await {
-                    Ok(_) => {
+                    Ok(()) => {
                         debug!(
                             "Successfully handled event for updating provider data: event={event:?}"
                         );
