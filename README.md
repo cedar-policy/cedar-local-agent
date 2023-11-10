@@ -166,6 +166,7 @@ in a background thread it will produce an `error!()` message but will not cause 
 
 This means that if for any reason, the agent cannot update its policy set due to an error, the agent will continue running with the stale policy set and will log an error.
 Since the agent will log `error!()`'s, it is possible to configure log-based alarms so that these failures can be caught quickly, but that is outside the scope of this README.
+
 ## Tracing
 
 This crate emits trace data [`tracing`](https://docs.rs/tracing/latest/tracing/) and can be integrated
