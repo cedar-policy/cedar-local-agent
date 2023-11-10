@@ -159,7 +159,6 @@ let update_provider_thread = update_provider_data_task(policy_set_provider.clone
 Note: these background threads must remain in scope for the life of your application. If there is an issue updating
 in a background thread it will produce an `error!()` message but will not cause the application to crash.
 
-
 ## Tracing
 
 This crate emits trace data [`tracing`](https://docs.rs/tracing/latest/tracing/) and can be integrated
@@ -358,13 +357,13 @@ In order to prevent this kind of security issue, you must restrict read access t
 restrict write access to these files. Only users or groups that really need to write changes to policies,
 or entities should be allowed to do so (for example, another agent that fetches policies from an internal application).
 
-For one example on how to avoid this problem, say you have the following folder structure for a local-agent built with 
+For one example on how to avoid this problem, say you have the following folder structure for a local-agent built with
 `cedar-local-agent` crate.
 
 ```
 authz-agent/
   |- authz_daemon (executable)
-  
+
 authz-local-data/
   |- policies.cedar
   |- entities.json
@@ -397,7 +396,6 @@ $ chmod u=rwx,go=r authz-local-data
 - [GitHub issues](https://github.com/cedar-policy/cedar-local-agent/issues)
 - [Cedar documentation](https://docs.cedarpolicy.com/)
 - [Usage examples](examples)
-
 
 ## License
 
