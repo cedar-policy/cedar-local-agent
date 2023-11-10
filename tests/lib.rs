@@ -5,13 +5,12 @@ mod test {
     use std::path::Path;
     use std::str::FromStr;
     use std::sync::Arc;
-    use std::time::Duration;
 
     use cedar_policy::{Context, Entities, PolicySet, Request, Schema};
     use cedar_policy_core::authorizer::Decision;
     use tempfile::NamedTempFile;
 
-    use cedar_local_agent::public::events::core::file_inspector_task;
+    use cedar_local_agent::public::events::core::{file_inspector_task, RefreshRateInMillis};
     use cedar_local_agent::public::events::receive::update_provider_data_task;
     use cedar_local_agent::public::file::entity_provider::EntityProvider;
     use cedar_local_agent::public::file::policy_set_provider::PolicySetProvider;
@@ -327,7 +326,8 @@ mod test {
             .unwrap(),
         );
 
-        let (_, receiver) = file_inspector_task(Duration::from_millis(1), temp_file_path.clone());
+        let (_, receiver) =
+            file_inspector_task(RefreshRateInMillis::Other(1), temp_file_path.clone());
         let mut test_receiver = receiver.resubscribe();
         let _update_provider_thread =
             update_provider_data_task(policy_set_provider.clone(), receiver);
@@ -363,17 +363,72 @@ mod test {
     }
 
     #[tokio::test]
+    async fn authorizer_with_sweets_app_with_policy_set_update_with_default_refresh_rate() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_str().unwrap().to_string();
+
+        let policy_set_provider = Arc::new(
+            PolicySetProvider::new(
+                policy_set_provider::ConfigBuilder::default()
+                    .policy_set_path(temp_file_path.clone())
+                    .build()
+                    .unwrap(),
+            )
+                .unwrap(),
+        );
+
+        let (_, receiver) =
+            file_inspector_task(RefreshRateInMillis::FifteenSeconds, temp_file_path.clone());
+        let mut test_receiver = receiver.resubscribe();
+        let _update_provider_thread =
+            update_provider_data_task(policy_set_provider.clone(), receiver);
+
+        let entity_provider = Arc::new(
+            EntityProvider::new(
+                entity_provider::ConfigBuilder::default()
+                    .entities_path("tests/data/sweets.entities.json")
+                    .schema_path("tests/data/sweets.schema.cedar.json")
+                    .build()
+                    .unwrap(),
+            )
+                .unwrap(),
+        );
+
+        let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
+            AuthorizerConfigBuilder::default()
+                .entity_provider(entity_provider)
+                .policy_set_provider(policy_set_provider)
+                .build()
+                .unwrap(),
+        );
+
+        // Blank file with no policies, all should be deny
+        validate_requests_all_deny(&authorizer, requests()).await;
+
+        assert!(test_receiver.recv().await.is_ok());
+        assert!(fs::copy("tests/data/sweets.cedar", temp_file_path).is_ok());
+        assert!(test_receiver.recv().await.is_ok());
+
+        // File copied should match expected request decision criteria
+        validate_requests(&authorizer, requests()).await;
+    }
+
+    #[tokio::test]
     async fn authorizer_with_sweets_app_with_policy_set_entities_updates() {
         let policy_set_temp_file = NamedTempFile::new().unwrap();
         let policy_set_temp_file_path = policy_set_temp_file.path().to_str().unwrap().to_string();
-        let (_, policy_set_receiver) =
-            file_inspector_task(Duration::from_millis(1), policy_set_temp_file_path.clone());
+        let (_, policy_set_receiver) = file_inspector_task(
+            RefreshRateInMillis::Other(1),
+            policy_set_temp_file_path.clone(),
+        );
 
         let entities_temp_file = NamedTempFile::new().unwrap();
         let entities_temp_file_path = entities_temp_file.path().to_str().unwrap().to_string();
         assert!(fs::write(entities_temp_file_path.clone(), "[]").is_ok());
-        let (_, entities_receiver) =
-            file_inspector_task(Duration::from_millis(1), entities_temp_file_path.clone());
+        let (_, entities_receiver) = file_inspector_task(
+            RefreshRateInMillis::Other(1),
+            entities_temp_file_path.clone(),
+        );
 
         let policy_set_provider = Arc::new(
             PolicySetProvider::new(
