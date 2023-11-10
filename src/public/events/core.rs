@@ -86,10 +86,6 @@ pub fn file_inspector_task(
     refresh_rate_in_millis: RefreshRateInMillis,
     path: String,
 ) -> (JoinHandle<()>, Receiver<Event>) {
-    let refresh_rate_duration = match refresh_rate_in_millis {
-        RefreshRateInMillis::FifteenSeconds => Duration::from_millis(15000),
-        RefreshRateInMillis::Other(n) => Duration::from_millis(n),
-    };
     /// The `FileChangeInspector` tells the authority when policies on disk have changed.
     #[derive(Debug)]
     struct FileChangeInspector {
@@ -133,7 +129,10 @@ pub fn file_inspector_task(
             Ok(true)
         }
     }
-
+    let refresh_rate_duration = match refresh_rate_in_millis {
+        RefreshRateInMillis::FifteenSeconds => Duration::from_millis(15000),
+        RefreshRateInMillis::Other(n) => Duration::from_millis(n),
+    };
     let (sender, receiver) = broadcast::channel(10);
     let mut inspector = FileChangeInspector::new(path.clone());
     let handle = tokio::spawn(async move {

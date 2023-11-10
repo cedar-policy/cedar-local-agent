@@ -374,7 +374,7 @@ mod test {
                     .build()
                     .unwrap(),
             )
-                .unwrap(),
+            .unwrap(),
         );
 
         let (_, receiver) =
@@ -391,7 +391,7 @@ mod test {
                     .build()
                     .unwrap(),
             )
-                .unwrap(),
+            .unwrap(),
         );
 
         let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
@@ -531,8 +531,10 @@ mod test {
             .unwrap(),
         );
 
-        let (_, policy_set_receiver) =
-            file_inspector_task(Duration::from_millis(1), policy_set_temp_file_path.clone());
+        let (_, policy_set_receiver) = file_inspector_task(
+            RefreshRateInMillis::Other(1),
+            policy_set_temp_file_path.clone(),
+        );
         let mut test_policy_set_receiver = policy_set_receiver.resubscribe();
         let _update_policy_set_task =
             update_provider_data_task(policy_set_provider.clone(), policy_set_receiver);
@@ -625,8 +627,10 @@ mod test {
             .unwrap(),
         );
 
-        let (_, entities_receiver) =
-            file_inspector_task(Duration::from_millis(1), entities_temp_file_path.clone());
+        let (_, entities_receiver) = file_inspector_task(
+            RefreshRateInMillis::Other(1),
+            entities_temp_file_path.clone(),
+        );
         let mut test_entities_receiver = entities_receiver.resubscribe();
         let _update_entity_task =
             update_provider_data_task(entity_provider.clone(), entities_receiver);
