@@ -20,8 +20,7 @@ use std::io::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use cedar_policy::{Entities, Request, Schema, SchemaError};
-use cedar_policy_core::entities::EntitiesError;
+use cedar_policy::{Entities, Request, Schema};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;
@@ -73,14 +72,22 @@ pub enum ProviderError {
     #[error("IO Error: {0}")]
     IOError(#[source] std::io::Error),
     /// Schema file is malformed in some way
-    #[error("The Schema file failed to be parsed: {0}")]
-    SchemaParseError(#[source] SchemaError),
+    #[error("The Schema file failed to be parsed at path: {0}")]
+    SchemaParseError(String),
     /// Entities file is malformed in some way
-    #[error("The Entities failed to be parsed: {0}")]
-    EntitiesError(#[source] EntitiesError),
+    #[error("The Entities failed to be parsed at path: {0}")]
+    EntitiesError(String),
     /// When the file system entity provider cannot update it's data
     #[error("The update provider failed to update the entities: {0}")]
     UpdateError(#[source] UpdateProviderDataError),
+}
+
+struct EntitiesErrorWrapper {
+    entity_file_path: String,
+}
+
+struct SchemaParseErrorWrapper {
+    schema_file_path: String,
 }
 
 impl From<Error> for ProviderError {
@@ -89,15 +96,15 @@ impl From<Error> for ProviderError {
     }
 }
 
-impl From<SchemaError> for ProviderError {
-    fn from(value: SchemaError) -> Self {
-        Self::SchemaParseError(value)
+impl From<SchemaParseErrorWrapper> for ProviderError {
+    fn from(value: SchemaParseErrorWrapper) -> Self {
+        Self::SchemaParseError(value.schema_file_path)
     }
 }
 
-impl From<EntitiesError> for ProviderError {
-    fn from(value: EntitiesError) -> Self {
-        Self::EntitiesError(value)
+impl From<EntitiesErrorWrapper> for ProviderError {
+    fn from(value: EntitiesErrorWrapper) -> Self {
+        Self::EntitiesError(value.entity_file_path)
     }
 }
 
@@ -130,12 +137,25 @@ impl EntityProvider {
 
             let entities = if let Some(schema_path) = configuration.schema_path.as_ref() {
                 let schema_file = File::open(schema_path)?;
-                let schema = Schema::from_file(schema_file)?;
-                let res = Entities::from_json_file(entities_file, Some(&schema))?;
+                let schema = Schema::from_file(schema_file).map_err(|_schema_error| {
+                    SchemaParseErrorWrapper {
+                        schema_file_path: schema_path.clone(),
+                    }
+                })?;
+                let res = Entities::from_json_file(entities_file, Some(&schema)).map_err(
+                    |_entities_error| EntitiesErrorWrapper {
+                        entity_file_path: entities_path.clone(),
+                    },
+                )?;
                 debug!("Fetched Entities from file with Schema: entities_file_path={entities_path:?}: schema_file_path={schema_path:?}");
                 res
             } else {
-                let res = Entities::from_json_file(entities_file, None)?;
+                let res =
+                    Entities::from_json_file(entities_file, None).map_err(|_entities_error| {
+                        EntitiesErrorWrapper {
+                            entity_file_path: entities_path.clone(),
+                        }
+                    })?;
                 debug!("Fetched Entities from file: entities_file_path={entities_path:?}");
                 res
             };
@@ -316,7 +336,10 @@ mod test {
         );
 
         assert!(error.is_err());
-        assert_eq!(error.err().unwrap().to_string(), "The Schema file failed to be parsed: JSON Schema file could not be parsed: expected `,` or `}` at line 61 column 11");
+        assert_eq!(
+            error.err().unwrap().to_string(),
+            "The Schema file failed to be parsed at path: tests/data/schema_bad.cedarschema.json"
+        );
     }
 
     #[test]
@@ -329,7 +352,10 @@ mod test {
         );
 
         assert!(error.is_err());
-        assert_eq!(error.err().unwrap().to_string(), "The Entities failed to be parsed: entities deserialization error: invalid type: map, expected a sequence at line 1 column 1");
+        assert_eq!(
+            error.err().unwrap().to_string(),
+            "The Entities failed to be parsed at path: tests/data/malformed_entities.json"
+        );
     }
 
     #[tokio::test]

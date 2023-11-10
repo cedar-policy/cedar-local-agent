@@ -21,7 +21,6 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use cedar_policy::{PolicySet, Request};
-use cedar_policy_core::parser::err::ParseErrors;
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;
@@ -64,14 +63,18 @@ pub struct PolicySetProvider {
 #[derive(Error, Debug)]
 pub enum ProviderError {
     /// Policy set file is malformed in some way
-    #[error("The Policy Set failed to be parsed: {0}")]
-    PolicySetParseError(#[source] ParseErrors),
+    #[error("The Policy Set failed to be parsed at path: {0}")]
+    PolicySetParseError(String),
     /// Can't read from disk or find the file
     #[error("IO Error: {0}")]
     IOError(#[source] std::io::Error),
     /// Failed to update the data async via the update provider
-    #[error("The update provider failed to update the entities: {0}")]
+    #[error("The update provider failed to update the policy set: {0}")]
     UpdateError(#[source] UpdateProviderDataError),
+}
+
+struct ParseErrorWrapper {
+    policy_set_path: String,
 }
 
 impl From<std::io::Error> for ProviderError {
@@ -80,9 +83,9 @@ impl From<std::io::Error> for ProviderError {
     }
 }
 
-impl From<ParseErrors> for ProviderError {
-    fn from(value: ParseErrors) -> Self {
-        Self::PolicySetParseError(value)
+impl From<ParseErrorWrapper> for ProviderError {
+    fn from(value: ParseErrorWrapper) -> Self {
+        Self::PolicySetParseError(value.policy_set_path)
     }
 }
 
@@ -109,7 +112,10 @@ impl PolicySetProvider {
     pub fn new(configuration: Config) -> Result<Self, ProviderError> {
         let policy_set_path = configuration.policy_set_path;
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))?;
-        let policy_set = PolicySet::from_str(&policy_set_src)?;
+        let policy_set =
+            PolicySet::from_str(&policy_set_src).map_err(|_parse_errors| ParseErrorWrapper {
+                policy_set_path: policy_set_path.clone(),
+            })?;
         let policy_ids = policy_set
             .policies()
             .map(cedar_policy::Policy::id)
@@ -203,11 +209,10 @@ mod test {
         );
 
         assert!(error.is_err());
-        assert!(error
-            .err()
-            .unwrap()
-            .to_string()
-            .starts_with("The Policy Set failed to be parsed"));
+        assert_eq!(
+            error.err().unwrap().to_string(),
+            "The Policy Set failed to be parsed at path: tests/data/malformed_policies.cedar"
+        );
     }
 
     #[tokio::test]
