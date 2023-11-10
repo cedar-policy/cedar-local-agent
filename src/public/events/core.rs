@@ -31,7 +31,7 @@ pub enum Event {
 }
 
 /// `clock_ticker_task` will create a background thread that will send notification to a broadcast
-/// channel periodically.  The output will be a handle to this thread and the receiver of these
+/// channel periodically. The output will be a handle to this thread and the receiver of these
 /// events.
 #[instrument]
 pub fn clock_ticker_task(duration: Duration) -> (JoinHandle<()>, Receiver<Event>) {
