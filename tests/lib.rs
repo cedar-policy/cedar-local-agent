@@ -442,6 +442,165 @@ mod test {
         validate_requests(&authorizer, requests()).await;
     }
 
+    #[tokio::test]
+    #[should_panic]
+    async fn authorizer_with_sweets_app_with_panic_on_malformed_policies_file_preload() {
+        Arc::new(
+            PolicySetProvider::new(
+                policy_set_provider::ConfigBuilder::default()
+                    .policy_set_path("tests/data/malformed_policies.cedar")
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
+    }
+
+    #[tokio::test]
+    async fn authorizer_with_sweets_app_with_update_with_malformed_policies_file() {
+        let policy_set_temp_file = NamedTempFile::new().unwrap();
+        let policy_set_temp_file_path = policy_set_temp_file.path().to_str().unwrap().to_string();
+
+        assert!(fs::copy("tests/data/sweets.cedar", policy_set_temp_file_path.clone()).is_ok());
+        let policy_set_src =
+            fs::read_to_string(Path::new(policy_set_temp_file_path.as_str())).unwrap();
+        assert!(PolicySet::from_str(&policy_set_src).is_ok());
+
+        let policy_set_provider = Arc::new(
+            PolicySetProvider::new(
+                policy_set_provider::ConfigBuilder::default()
+                    .policy_set_path(policy_set_temp_file_path.clone())
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
+
+        let (_, policy_set_receiver) =
+            file_inspector_task(Duration::from_millis(1), policy_set_temp_file_path.clone());
+        let mut test_policy_set_receiver = policy_set_receiver.resubscribe();
+        let _update_policy_set_task =
+            update_provider_data_task(policy_set_provider.clone(), policy_set_receiver);
+
+        let entity_provider = Arc::new(
+            EntityProvider::new(
+                entity_provider::ConfigBuilder::default()
+                    .entities_path("tests/data/sweets.entities.json")
+                    .schema_path("tests/data/sweets.schema.cedar.json")
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
+
+        let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
+            AuthorizerConfigBuilder::default()
+                .entity_provider(entity_provider)
+                .policy_set_provider(policy_set_provider)
+                .build()
+                .unwrap(),
+        );
+
+        validate_requests(&authorizer, requests()).await;
+
+        assert!(test_policy_set_receiver.recv().await.is_ok());
+        assert!(fs::copy(
+            "tests/data/malformed_policies.cedar",
+            policy_set_temp_file_path.clone()
+        )
+        .is_ok());
+        let policy_set_src =
+            fs::read_to_string(Path::new(policy_set_temp_file_path.as_str())).unwrap();
+        assert!(PolicySet::from_str(&policy_set_src).is_err());
+        assert!(test_policy_set_receiver.recv().await.is_ok());
+
+        validate_requests(&authorizer, requests()).await;
+    }
+
+    #[tokio::test]
+    #[should_panic]
+    async fn authorizer_with_sweets_app_with_panic_on_malformed_entities_file_preload() {
+        Arc::new(
+            EntityProvider::new(
+                entity_provider::ConfigBuilder::default()
+                    .entities_path("tests/data/malformed_entities.json")
+                    .schema_path("tests/data/sweets.schema.cedar.json")
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
+    }
+
+    #[tokio::test]
+    async fn authorizer_with_sweets_app_with_update_with_malformed_entities_file() {
+        let policy_set_provider = Arc::new(
+            PolicySetProvider::new(
+                policy_set_provider::ConfigBuilder::default()
+                    .policy_set_path("tests/data/sweets.cedar")
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
+
+        let entities_temp_file = NamedTempFile::new().unwrap();
+        let entities_temp_file_path = entities_temp_file.path().to_str().unwrap().to_string();
+
+        assert!(fs::copy(
+            "tests/data/sweets.entities.json",
+            entities_temp_file_path.clone()
+        )
+        .is_ok());
+
+        let entities_file = File::open(entities_temp_file_path.clone()).unwrap();
+        let schema_file_path = "tests/data/sweets.schema.cedar.json";
+        let schema_file = File::open(schema_file_path).unwrap();
+        let schema = Schema::from_file(schema_file).unwrap();
+        assert!(Entities::from_json_file(entities_file, Some(&schema)).is_ok());
+
+        let entity_provider = Arc::new(
+            EntityProvider::new(
+                entity_provider::ConfigBuilder::default()
+                    .entities_path(entities_temp_file_path.clone())
+                    .schema_path(schema_file_path)
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
+
+        let (_, entities_receiver) =
+            file_inspector_task(Duration::from_millis(1), entities_temp_file_path.clone());
+        let mut test_entities_receiver = entities_receiver.resubscribe();
+        let _update_entity_task =
+            update_provider_data_task(entity_provider.clone(), entities_receiver);
+
+        let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
+            AuthorizerConfigBuilder::default()
+                .entity_provider(entity_provider)
+                .policy_set_provider(policy_set_provider)
+                .build()
+                .unwrap(),
+        );
+
+        validate_requests(&authorizer, requests()).await;
+
+        assert!(test_entities_receiver.recv().await.is_ok());
+        assert!(fs::copy(
+            "tests/data/malformed_entities.json",
+            entities_temp_file_path.clone()
+        )
+        .is_ok());
+        let entities_file = File::open(entities_temp_file_path).unwrap();
+        let schema_file = File::open(schema_file_path).unwrap();
+        let schema = Schema::from_file(schema_file).unwrap();
+        assert!(Entities::from_json_file(entities_file, Some(&schema)).is_err());
+        assert!(test_entities_receiver.recv().await.is_ok());
+
+        validate_requests(&authorizer, requests()).await;
+    }
+
     async fn validate_requests(
         authorizer: &Authorizer<PolicySetProvider, EntityProvider>,
         evaluation: Vec<(Request, Decision)>,
