@@ -22,24 +22,24 @@ pub async fn main() {
     let roller = tracing_appender::rolling::minutely("output/tracing_example_logs", "log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(roller);
 
-    // Example of create a filter that only logs INFO level messages from the `cedar_local_agent` crate.
+    // Example of create a filter that only logs INFO level messages from the `cedar_local_agent` crate
     let filter =
         tracing_subscriber::filter::Targets::new().with_target("cedar_local_agent", Level::INFO);
 
-    // Example of creating a tracing layer that logs to a file in json format.
+    // Example of creating a tracing layer that logs to a file in json format
     let layer = tracing_subscriber::fmt::layer()
         .json()
         .with_writer(non_blocking)
         .with_filter(filter);
 
-    // Initialize the tracing logger with the tracing layer.
+    // Initialize the tracing logger with the tracing layer
     tracing_subscriber::registry()
         .with(layer)
         .try_init()
         .expect("Logging Failed to Start, Exiting.");
 
     /*
-     * Start your server or operational logic here.
+     * Start your server or operational logic here
      */
     let policy_set_provider = PolicySetProvider::new(
         policy_set_provider::ConfigBuilder::default()
