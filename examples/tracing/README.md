@@ -8,7 +8,7 @@ This example demonstrates how to perform tracing logging using the Cedar Local A
 
 ## Code example
 
-[Tracing](tracing)
+[Tracing](src)
 
 ## Run the code
 
