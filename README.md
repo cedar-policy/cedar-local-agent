@@ -162,6 +162,7 @@ let update_provider_thread = update_provider_data_task(policy_set_provider.clone
 ```
 
 Note: these background threads must remain in scope for the life of your application. If there is an issue updating
+Note: these background threads must remain in scope for the life of your application. If there is an issue updating
 in a background thread it will produce an `error!()` message but will not cause the application to crash.
 
 This means that if for any reason, the agent cannot update its policy set due to an error, the agent will continue running with the stale policy set and will log an error.

@@ -14,6 +14,11 @@ use cedar_policy_core::authorizer::Decision;
 
 #[tokio::main]
 pub async fn main() {
+    /*
+     * Initialize the tracing logger in the `main` function before starting your server or beginning operational processes
+     */
+
+    // Example of creating a new log file in the format of output/tracing_example_logs/log.yyyy-MM-dd-HH-mm minutely
     let roller = tracing_appender::rolling::minutely("output/tracing_example_logs", "log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(roller);
 
@@ -21,16 +26,21 @@ pub async fn main() {
     let filter =
         tracing_subscriber::filter::Targets::new().with_target("cedar_local_agent", Level::INFO);
 
+    // Example of creating a tracing layer that logs to a file in json format.
     let layer = tracing_subscriber::fmt::layer()
         .json()
         .with_writer(non_blocking)
         .with_filter(filter);
 
+    // Initialize the tracing logger with the tracing layer.
     tracing_subscriber::registry()
         .with(layer)
         .try_init()
         .expect("Logging Failed to Start, Exiting.");
 
+    /*
+     * Start your server or operational logic here.
+     */
     let policy_set_provider = PolicySetProvider::new(
         policy_set_provider::ConfigBuilder::default()
             .policy_set_path("../../../tests/data/sweets.cedar")
@@ -73,3 +83,9 @@ pub async fn main() {
         Decision::Deny
     )
 }
+
+// For more information on tracing and its structured logging and diagnostics, visit:
+// https://docs.rs/tracing/latest/tracing/
+// To learn more about setting up different subscribers and writers. We recommend using tracing-specific libraries, such as:
+// https://tracing.rs/tracing_subscriber/index.html
+// https://tracing.rs/tracing_appender/index.html
