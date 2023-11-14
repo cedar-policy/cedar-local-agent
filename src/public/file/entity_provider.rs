@@ -84,11 +84,13 @@ pub enum ProviderError {
 
 /// A wrapper that wraps `EntitiesError` to map the error message
 struct EntitiesErrorWrapper {
+    /// This is the path to the file to load entities
     entity_file_path: String,
 }
 
 /// A wrapper that wraps `SchemaParseError` to map the error message
 struct SchemaParseErrorWrapper {
+    /// This is the path to the file to load schema
     schema_file_path: String,
 }
 
