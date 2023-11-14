@@ -1309,6 +1309,7 @@ mod test {
         assert!(matches!(log_result, _expected));
     }
 
+    /// This test proves that user request input is being redacted on `FieldSet::default()`
     #[test]
     fn validate_user_input_no_effect_on_log_size() {
         let response = generate_response(0, Decision::Allow);
