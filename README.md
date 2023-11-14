@@ -136,8 +136,8 @@ the receiver thread. There are two provided functions for creating signaler thre
 using a collision resistant hashing function (SHA256) and notifies on modifications
 
 Warning: It is important to be careful when selecting the refresh rate of the signaler which triggers a policy refresh.
-We have set up a `RefreshRateInMillis` enum which gives the default rate of every 15 seconds.
-This is fast enough for most applications but slow enough to be very unlikely to trigger any sort of throttling or performance impact on most policy stores.
+We have set up a `RefreshRate` enum which gives several options of RefreshRates of at least 15 seconds.
+This is fast enough for most applications but slow enough to be very unlikely to trigger any sort of throttling or performance impact on most policy set sources.
 
 
 Receivers are required to be passed to a new separate thread to listen and respond to events.
