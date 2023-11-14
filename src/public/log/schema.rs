@@ -1330,6 +1330,9 @@ mod test {
             serde_json::to_string(&ocsf.unwrap()).unwrap()
         };
 
+        assert!(!request_json_1.contains("alice111"));
+        assert!(!request_json_1.contains("bob"));
+
         let request_json_2 = {
             let request = generate_mock_request("alice");
             let entities = generate_custom_count_entities(50);
@@ -1343,6 +1346,9 @@ mod test {
 
             serde_json::to_string(&ocsf.unwrap()).unwrap()
         };
+
+        assert!(!request_json_2.contains("alice"));
+        assert!(!request_json_2.contains("bob"));
 
         assert_eq!(request_json_1.len(), request_json_2.len());
     }
