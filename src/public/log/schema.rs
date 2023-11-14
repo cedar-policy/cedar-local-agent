@@ -1023,6 +1023,37 @@ mod test {
         Entities::from_json_str(entities_data, None).unwrap()
     }
 
+    fn generate_custom_count_entities(count: i32) -> Entities {
+        let mut entities_data = r#"
+        [
+          {
+            "uid": { "type": "CedarLocalAgent::User", "id": "alice" },
+            "attrs": {},
+            "parents": [
+              { "type": "CedarLocalAgent::UserGroup", "id": "alice_friends" },
+              { "type": "CedarLocalAgent::UserGroup", "id": "bob_friends" }
+            ]
+          },
+          "#
+        .to_owned();
+        for i in 0..count {
+            let append = r#"{
+                "uid": { "type": "CedarLocalAgent::User", "id": "bob"#
+                .to_owned()
+                + i.to_string().as_str()
+                + r#""},
+                "attrs" : {},
+                "parents": []
+               },"#;
+
+            entities_data.push_str(&append);
+        }
+        entities_data.pop(); // To remove the final comma (from_json_str throws an error otherwise)
+        entities_data.push(']');
+
+        Entities::from_json_str(&entities_data, None).unwrap()
+    }
+
     fn generate_response(num_of_error: usize, decision: Decision) -> Response {
         let mut policy_ids = HashSet::new();
         policy_ids.insert(PolicyId::from_str("policy1").unwrap());
@@ -1276,6 +1307,44 @@ mod test {
         assert!(log_result.is_err());
         let _expected = generate_validation_error();
         assert!(matches!(log_result, _expected));
+    }
+
+    #[test]
+    fn validate_user_input_no_effect_on_log_size() {
+        let response = generate_response(0, Decision::Allow);
+        let fields = FieldSet::default();
+        let authorizer_name = "cedar::local::agent::library";
+
+        let request_json_1 = {
+            let request = generate_mock_request("alice111");
+            let entities = generate_custom_count_entities(100);
+
+            let ocsf = OpenCyberSecurityFramework::create(
+                &request,
+                &response,
+                &entities,
+                &fields,
+                authorizer_name,
+            );
+
+            serde_json::to_string(&ocsf.unwrap()).unwrap()
+        };
+
+        let request_json_2 = {
+            let request = generate_mock_request("alice");
+            let entities = generate_custom_count_entities(50);
+            let ocsf = OpenCyberSecurityFramework::create(
+                &request,
+                &response,
+                &entities,
+                &fields,
+                authorizer_name,
+            );
+
+            serde_json::to_string(&ocsf.unwrap()).unwrap()
+        };
+
+        assert_eq!(request_json_1.len(), request_json_2.len());
     }
 
     #[test]
