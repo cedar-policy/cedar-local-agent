@@ -5,12 +5,13 @@ mod test {
     use std::path::Path;
     use std::str::FromStr;
     use std::sync::Arc;
+    use std::time::Duration;
 
     use cedar_policy::{Context, Entities, PolicySet, Request, Schema};
     use cedar_policy_core::authorizer::Decision;
     use tempfile::NamedTempFile;
 
-    use cedar_local_agent::public::events::core::{file_inspector_task, RefreshRateInMillis};
+    use cedar_local_agent::public::events::core::{file_inspector_task, RefreshRate};
     use cedar_local_agent::public::events::receive::update_provider_data_task;
     use cedar_local_agent::public::file::entity_provider::EntityProvider;
     use cedar_local_agent::public::file::policy_set_provider::PolicySetProvider;
@@ -326,8 +327,10 @@ mod test {
             .unwrap(),
         );
 
-        let (_, receiver) =
-            file_inspector_task(RefreshRateInMillis::Other(1), temp_file_path.clone());
+        let (_, receiver) = file_inspector_task(
+            RefreshRate::Other(Duration::from_millis(1)),
+            temp_file_path.clone(),
+        );
         let mut test_receiver = receiver.resubscribe();
         let _update_provider_thread =
             update_provider_data_task(policy_set_provider.clone(), receiver);
@@ -378,7 +381,7 @@ mod test {
         );
 
         let (_, receiver) =
-            file_inspector_task(RefreshRateInMillis::FifteenSeconds, temp_file_path.clone());
+            file_inspector_task(RefreshRate::FifteenSeconds, temp_file_path.clone());
         let mut test_receiver = receiver.resubscribe();
         let _update_provider_thread =
             update_provider_data_task(policy_set_provider.clone(), receiver);
@@ -418,7 +421,7 @@ mod test {
         let policy_set_temp_file = NamedTempFile::new().unwrap();
         let policy_set_temp_file_path = policy_set_temp_file.path().to_str().unwrap().to_string();
         let (_, policy_set_receiver) = file_inspector_task(
-            RefreshRateInMillis::Other(1),
+            RefreshRate::Other(Duration::from_millis(1)),
             policy_set_temp_file_path.clone(),
         );
 
@@ -426,7 +429,7 @@ mod test {
         let entities_temp_file_path = entities_temp_file.path().to_str().unwrap().to_string();
         assert!(fs::write(entities_temp_file_path.clone(), "[]").is_ok());
         let (_, entities_receiver) = file_inspector_task(
-            RefreshRateInMillis::Other(1),
+            RefreshRate::Other(Duration::from_millis(1)),
             entities_temp_file_path.clone(),
         );
 
@@ -532,7 +535,7 @@ mod test {
         );
 
         let (_, policy_set_receiver) = file_inspector_task(
-            RefreshRateInMillis::Other(1),
+            RefreshRate::Other(Duration::from_millis(1)),
             policy_set_temp_file_path.clone(),
         );
         let mut test_policy_set_receiver = policy_set_receiver.resubscribe();
@@ -628,7 +631,7 @@ mod test {
         );
 
         let (_, entities_receiver) = file_inspector_task(
-            RefreshRateInMillis::Other(1),
+            RefreshRate::Other(Duration::from_millis(1)),
             entities_temp_file_path.clone(),
         );
         let mut test_entities_receiver = entities_receiver.resubscribe();

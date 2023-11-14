@@ -32,32 +32,42 @@ pub enum Event {
 
 /// Gives guidance for a reasonable refresh rate for most applications
 #[derive(Debug)]
-pub enum RefreshRateInMillis {
+pub enum RefreshRate {
     /// 15 seconds is a reasonable refresh rate for most applications
     FifteenSeconds,
-    /// Warning: Setting refresh rates that are very low risks overwhelming the source
-    ///     being used as a policy store. Users should be cautious when setting refresh
-    ///     rates less than the default and ensure that their disk (or whatever other pollicy store
-    ///     they are using) can handle the load
-    Other(u64),
+    /// Thirty second refresh rate
+    ThirtySeconds,
+    /// One minute refresh rate
+    OneMinute,
+    /// Warning: Setting refresh rates that are very low risks overwhelming the policy set source.
+    /// Users should be cautious when setting refresh rates less than the default and ensure
+    /// that their policy set source (the disk IO, AVP throttle limit, or anything else)
+    /// can handle the rate
+    Other(Duration),
+}
+
+impl RefreshRate {
+    /// Get refresh rate as Duration
+    pub fn value(&self) -> Duration {
+        match *self {
+            Self::FifteenSeconds => Duration::from_secs(15),
+            Self::ThirtySeconds => Duration::from_secs(30),
+            Self::OneMinute => Duration::from_secs(60),
+            Self::Other(d) => d,
+        }
+    }
 }
 
 /// `clock_ticker_task` will create a background thread that will send notification to a broadcast
 /// channel periodically.  The output will be a handle to this thread and the receiver of these
 /// events.
 #[instrument]
-pub fn clock_ticker_task(
-    refresh_rate_in_millis: RefreshRateInMillis,
-) -> (JoinHandle<()>, Receiver<Event>) {
-    let refresh_rate_duration = match refresh_rate_in_millis {
-        RefreshRateInMillis::FifteenSeconds => Duration::from_millis(15000),
-        RefreshRateInMillis::Other(n) => Duration::from_millis(n),
-    };
+pub fn clock_ticker_task(refresh_rate: RefreshRate) -> (JoinHandle<()>, Receiver<Event>) {
     let (sender, receiver) = broadcast::channel(10);
 
     let handle = tokio::spawn(async move {
         loop {
-            tokio::time::sleep(refresh_rate_duration).await;
+            tokio::time::sleep(refresh_rate.value()).await;
 
             let event = Event::Clock(EventUuid(Uuid::new_v4().to_string()));
             match sender.send(event.clone()) {
@@ -83,7 +93,7 @@ pub fn clock_ticker_task(
 /// The mechanism for detecting change within the file is a standard `SHA-256` digest.
 #[instrument]
 pub fn file_inspector_task(
-    refresh_rate_in_millis: RefreshRateInMillis,
+    refresh_rate: RefreshRate,
     path: String,
 ) -> (JoinHandle<()>, Receiver<Event>) {
     /// The `FileChangeInspector` tells the authority when policies on disk have changed.
@@ -129,15 +139,11 @@ pub fn file_inspector_task(
             Ok(true)
         }
     }
-    let refresh_rate_duration = match refresh_rate_in_millis {
-        RefreshRateInMillis::FifteenSeconds => Duration::from_millis(15000),
-        RefreshRateInMillis::Other(n) => Duration::from_millis(n),
-    };
     let (sender, receiver) = broadcast::channel(10);
     let mut inspector = FileChangeInspector::new(path.clone());
     let handle = tokio::spawn(async move {
         loop {
-            tokio::time::sleep(refresh_rate_duration).await;
+            tokio::time::sleep(refresh_rate.value()).await;
 
             match inspector.changed() {
                 Ok(true) => {
@@ -168,15 +174,15 @@ pub fn file_inspector_task(
 
 #[cfg(test)]
 mod test {
+    use std::time::Duration;
     use tempfile::NamedTempFile;
 
-    use crate::public::events::core::{
-        clock_ticker_task, file_inspector_task, Event, RefreshRateInMillis,
-    };
+    use crate::public::events::core::{clock_ticker_task, file_inspector_task, Event, RefreshRate};
 
     #[tokio::test]
     async fn validate_send_receive() {
-        let (handle, mut receiver) = clock_ticker_task(RefreshRateInMillis::Other(1));
+        let (handle, mut receiver) =
+            clock_ticker_task(RefreshRate::Other(Duration::from_millis(1)));
         assert!(receiver.recv().await.is_ok());
         handle.abort();
     }
@@ -185,7 +191,8 @@ mod test {
     async fn validate_send_receive_file_inspector() {
         let temp_file = NamedTempFile::new().unwrap();
         let path = temp_file.path().to_str().unwrap().to_string();
-        let (_, mut receiver) = file_inspector_task(RefreshRateInMillis::Other(1), path.clone());
+        let (_, mut receiver) =
+            file_inspector_task(RefreshRate::Other(Duration::from_millis(1)), path.clone());
 
         match receiver.recv().await.unwrap() {
             Event::File(_, recv_path) => {
