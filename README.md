@@ -135,6 +135,11 @@ the receiver thread. There are two provided functions for creating signaler thre
 2. [`file_inspector_task`](./src/public/events/core.rs) periodically wakes up and checks for differences in a file
    using a collision resistant hashing function (SHA256) and notifies on modifications
 
+Warning: It is important to be careful when selecting the refresh rate of the signaler which triggers a policy refresh.
+We have set up a `RefreshRate` enum which gives several options of RefreshRates of at least 15 seconds.
+This is fast enough for most applications but slow enough to be very unlikely to trigger any sort of throttling or performance impact on most policy set sources.
+
+
 Receivers are required to be passed to a new separate thread to listen and respond to events.
 The [`update_provider_data_task`](./src/public/events/receive.rs) handles receiving these signals in the form of an
 [`Event`](./src/public/events/mod.rs). Messages are handled one message at a time. The receiver thread blocks until
@@ -143,7 +148,7 @@ it has successfully or unsuccessfully updated the data for the provider.
 Sample usage of updating a policy set provider's data every sixty seconds:
 
 ```rust
-let (clock_ticker_signal_thread, receiver) = clock_ticker_task(Duration::from_secs(60));
+let (clock_ticker_signal_thread, receiver) = clock_ticker_task(RefreshRate::FifteenSeconds);
 
 let policy_set_provider = Arc::new(PolicySetProvider::new(
     policy_set_provider::ConfigBuilder::default()
