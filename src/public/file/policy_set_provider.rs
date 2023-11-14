@@ -73,16 +73,30 @@ pub enum ProviderError {
     UpdateError(#[source] UpdateProviderDataError),
 }
 
+/// A wrapper that wraps policy set `ParseError` to map the error message
 struct ParseErrorWrapper {
     policy_set_path: String,
 }
 
+/// Implements the constructor for the `ParseErrorWrapper`.
+impl ParseErrorWrapper {
+    /// Creates a new wrapper of the `ParseErrors`
+    fn new(policy_set_path: String) -> Self {
+        Self {
+            /// This is the path to the file to load the policy set.
+            policy_set_path,
+        }
+    }
+}
+
+/// Map the `IOError` to the `ProviderError::IOError`
 impl From<std::io::Error> for ProviderError {
     fn from(value: Error) -> Self {
         Self::IOError(value)
     }
 }
 
+/// Map the `ParseErrorWrapper` to the `ProviderError::PolicySetParseError` with the file path
 impl From<ParseErrorWrapper> for ProviderError {
     fn from(value: ParseErrorWrapper) -> Self {
         Self::PolicySetParseError(value.policy_set_path)
@@ -112,10 +126,8 @@ impl PolicySetProvider {
     pub fn new(configuration: Config) -> Result<Self, ProviderError> {
         let policy_set_path = configuration.policy_set_path;
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))?;
-        let policy_set =
-            PolicySet::from_str(&policy_set_src).map_err(|_parse_errors| ParseErrorWrapper {
-                policy_set_path: policy_set_path.clone(),
-            })?;
+        let policy_set = PolicySet::from_str(&policy_set_src)
+            .map_err(|_parse_errors| ParseErrorWrapper::new(policy_set_path.clone()))?;
         let policy_ids = policy_set
             .policies()
             .map(cedar_policy::Policy::id)

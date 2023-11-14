@@ -82,26 +82,53 @@ pub enum ProviderError {
     UpdateError(#[source] UpdateProviderDataError),
 }
 
+/// A wrapper that wraps `EntitiesError` to map the error message
 struct EntitiesErrorWrapper {
     entity_file_path: String,
 }
 
+/// A wrapper that wraps `SchemaParseError` to map the error message
 struct SchemaParseErrorWrapper {
     schema_file_path: String,
 }
 
+/// Implements the constructor for the `EntitiesErrorWrapper`.
+impl EntitiesErrorWrapper {
+    /// Creates a new wrapper of the `EntitiesError`
+    fn new(entity_file_path: String) -> Self {
+        Self {
+            /// This is the path to the file to load entities.
+            entity_file_path,
+        }
+    }
+}
+
+/// Implements the constructor for the `SchemaParseErrorWrapper`.
+impl SchemaParseErrorWrapper {
+    /// Creates a new wrapper of the `SchemaParseError`
+    fn new(schema_file_path: String) -> Self {
+        Self {
+            /// This is the path to the file to load schema.
+            schema_file_path,
+        }
+    }
+}
+
+/// Map the `IOError` to the `ProvideError::IOError`
 impl From<Error> for ProviderError {
     fn from(value: Error) -> Self {
         Self::IOError(value)
     }
 }
 
+/// Map the `SchemaParseErrorWrapper` to the `ProvideError::SchemaParseError` with the file path
 impl From<SchemaParseErrorWrapper> for ProviderError {
     fn from(value: SchemaParseErrorWrapper) -> Self {
         Self::SchemaParseError(value.schema_file_path)
     }
 }
 
+/// Map the `EntitiesErrorWrapper` to the `ProvideError::EntitiesError`  with the file path
 impl From<EntitiesErrorWrapper> for ProviderError {
     fn from(value: EntitiesErrorWrapper) -> Self {
         Self::EntitiesError(value.entity_file_path)
@@ -137,16 +164,10 @@ impl EntityProvider {
 
             let entities = if let Some(schema_path) = configuration.schema_path.as_ref() {
                 let schema_file = File::open(schema_path)?;
-                let schema = Schema::from_file(schema_file).map_err(|_schema_error| {
-                    SchemaParseErrorWrapper {
-                        schema_file_path: schema_path.clone(),
-                    }
-                })?;
-                let res = Entities::from_json_file(entities_file, Some(&schema)).map_err(
-                    |_entities_error| EntitiesErrorWrapper {
-                        entity_file_path: entities_path.clone(),
-                    },
-                )?;
+                let schema = Schema::from_file(schema_file)
+                    .map_err(|_schema_error| SchemaParseErrorWrapper::new(schema_path.clone()))?;
+                let res = Entities::from_json_file(entities_file, Some(&schema))
+                    .map_err(|_entities_error| EntitiesErrorWrapper::new(entities_path.clone()))?;
                 debug!("Fetched Entities from file with Schema: entities_file_path={entities_path:?}: schema_file_path={schema_path:?}");
                 res
             } else {
