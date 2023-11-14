@@ -148,7 +148,7 @@ it has successfully or unsuccessfully updated the data for the provider.
 Sample usage of updating a policy set provider's data every sixty seconds:
 
 ```rust
-let (clock_ticker_signal_thread, receiver) = clock_ticker_task(RefreshRateInMillis::FifteenSeconds);
+let (clock_ticker_signal_thread, receiver) = clock_ticker_task(RefreshRate::FifteenSeconds);
 
 let policy_set_provider = Arc::new(PolicySetProvider::new(
     policy_set_provider::ConfigBuilder::default()
