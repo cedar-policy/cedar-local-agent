@@ -33,3 +33,5 @@ cargo audit --deny warnings && \
 
 echo ">>>> cargo deny check" && \
 cargo deny check
+
+echo "Build Successful"
