@@ -145,7 +145,7 @@ The [`update_provider_data_task`](./src/public/events/receive.rs) handles receiv
 [`Event`](./src/public/events/mod.rs). Messages are handled one message at a time. The receiver thread blocks until
 it has successfully or unsuccessfully updated the data for the provider.
 
-Sample usage of updating a policy set provider's data every sixty seconds:
+Sample usage of updating a policy set provider's data every fifteen seconds:
 
 ```rust
 let (clock_ticker_signal_thread, receiver) = clock_ticker_task(RefreshRate::FifteenSeconds);
@@ -162,9 +162,10 @@ let update_provider_thread = update_provider_data_task(policy_set_provider.clone
 ```
 
 Note: these background threads must remain in scope for the life of your application. If there is an issue updating
-Note: these background threads must remain in scope for the life of your application. If there is an issue updating
 in a background thread it will produce an `error!()` message but will not cause the application to crash.
 
+This means that if for any reason, the agent cannot update its policy set due to an error, the agent will continue running with the stale policy set and will log an error.
+Since the agent will log `error!()`'s, it is possible to configure log-based alarms so that these failures can be caught quickly, but that is outside the scope of this README.
 ## Tracing
 
 This crate emits trace data [`tracing`](https://docs.rs/tracing/latest/tracing/) and can be integrated
