@@ -77,20 +77,17 @@ pub enum ProviderError {
     /// Entities file is malformed in some way
     #[error("The Entities failed to be parsed at path: {0}")]
     EntitiesError(String),
-    /// When the file system entity provider cannot update it's data
-    #[error("The update provider failed to update the entities: {0}")]
-    UpdateError(#[source] UpdateProviderDataError),
 }
 
 /// A wrapper that wraps `EntitiesError` to map the error message
 struct EntitiesErrorWrapper {
-    /// This is the path to the file to load entities
+    // This is the path to the file to load entities
     entity_file_path: String,
 }
 
 /// A wrapper that wraps `SchemaParseError` to map the error message
 struct SchemaParseErrorWrapper {
-    /// This is the path to the file to load schema
+    // This is the path to the file to load schema
     schema_file_path: String,
 }
 
