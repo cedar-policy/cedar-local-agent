@@ -84,7 +84,7 @@ impl ParseErrorWrapper {
     /// Creates a new wrapper of the `ParseErrors`
     fn new(policy_set_path: String) -> Self {
         Self {
-            /// This is the path to the file to load the policy set
+            // This is the path to the file to load the policy set
             policy_set_path,
         }
     }

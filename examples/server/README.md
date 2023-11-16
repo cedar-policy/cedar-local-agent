@@ -55,10 +55,10 @@ Sample curl:
 
 ```
 // Expects 200 OK
-cat request_allow.json | base64 | xargs sh -c 'curl -vvv localhost:3003 -H "Authorization: $1"' sh
+cat request_allow.json | base64 | xargs sh -c 'curl -vvv localhost:3000 -H "Authorization: $1"' sh
 
 // Expect 401 Unauthorized
-cat request_deny.json | base64 | xargs sh -c 'curl -vvv localhost:3003 -H "Authorization: $1"' sh
+cat request_deny.json | base64 | xargs sh -c 'curl -vvv localhost:3000 -H "Authorization: $1"' sh
 ```
 
 <br>

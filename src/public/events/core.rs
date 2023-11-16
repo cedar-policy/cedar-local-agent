@@ -109,7 +109,7 @@ pub fn file_inspector_task(
         /// Creates a new instance of the `FileChangeInspector`
         pub fn new(file_path: String) -> Self {
             Self {
-                /// This is the path to the file to monitor for changes.
+                // This is the path to the file to monitor for changes.
                 file_path,
                 hash: None,
             }

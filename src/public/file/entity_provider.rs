@@ -99,7 +99,7 @@ impl EntitiesErrorWrapper {
     /// Creates a new wrapper of the `EntitiesError`
     fn new(entity_file_path: String) -> Self {
         Self {
-            /// This is the path to the file to load entities.
+            // This is the path to the file to load entities.
             entity_file_path,
         }
     }
@@ -110,7 +110,7 @@ impl SchemaParseErrorWrapper {
     /// Creates a new wrapper of the `SchemaParseError`
     fn new(schema_file_path: String) -> Self {
         Self {
-            /// This is the path to the file to load schema.
+            // This is the path to the file to load schema.
             schema_file_path,
         }
     }
