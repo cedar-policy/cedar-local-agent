@@ -225,6 +225,17 @@ let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
 );
 ```
 
+### Availability Warning:
+
+Using a `log::FieldSet` configuration that sets any cedar field to `true` will result in that field being logged. 
+These fields, including the entities field, could contain sensitive information. 
+Additionally, the cedar language has no current limit on field sizes within a [`Request`](..link). 
+A large request with verbose logging can result in more disk i/o to occur.
+This disk i/o could negatively impact the performance of the application.
+
+Alternatively, create a default `log::FieldSet` with `log::FieldSetBuilder::default().build().unwrap()`. 
+This option will redact user input.
+
 ### Note:
 
 Cedar does not at this time support extracting the `Context` from the `Request` struct since it is private, therefore it is extracted using `request.to_string()`. This is not ideal as this logs the entire request (Principal, Action, Resource, Context) instead of just the context.
