@@ -1,0 +1,32 @@
+[package]
+name = "server-example"
+edition = "2023"
+version = "0.1.0"
+
+publish = false
+
+[dependencies]
+cedar-local-agent = { version = "0.1.0",  path = "../../../cedar-local-agent" }
+
+# Utilities
+async-trait = "0.1.71"
+derive_builder = "0.12.0"
+tokio = "1.29.1"
+base64 = "0.21.3"
+futures = { version = "0.3.28", features = ["std"] }
+serde = "1.0.188"
+serde_json = "1.0.103"
+
+# Server
+tower = { version = "0.4", features = ["full"] }
+tower-http = { version = "0.4", features = ["full"] }
+hyper = { version = "0.14.27", features = ["full"] }
+http-body = "0.4.5"
+
+# Error, Tracing
+thiserror = "1.0.48"
+tracing = "0.1.37"
+
+# Cedar
+cedar-policy = "2.3.0"
+cedar-policy-core = "2.3.0"

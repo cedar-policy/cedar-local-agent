@@ -1,0 +1,26 @@
+{
+   "principal": {
+        "uid": {
+             "__entity": {
+                 "type": "User",
+                 "id": "Mike"
+             }
+        }
+   },
+   "action": {
+        "uid": {
+             "__entity": {
+                 "type": "Action",
+                 "id": "read"
+             }
+        }
+   },
+   "resource": {
+        "uid": {
+             "__entity": {
+                 "type": "Box",
+                 "id": "3"
+             }
+        }
+   }
+}
