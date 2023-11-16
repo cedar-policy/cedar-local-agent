@@ -68,9 +68,6 @@ pub enum ProviderError {
     /// Can't read from disk or find the file
     #[error("IO Error: {0}")]
     IOError(#[source] std::io::Error),
-    /// Failed to update the data async via the update provider
-    #[error("The update provider failed to update the policy set: {0}")]
-    UpdateError(#[source] UpdateProviderDataError),
 }
 
 /// A wrapper that wraps policy set `ParseError` to map the error message
@@ -84,7 +81,7 @@ impl ParseErrorWrapper {
     /// Creates a new wrapper of the `ParseErrors`
     fn new(policy_set_path: String) -> Self {
         Self {
-            /// This is the path to the file to load the policy set
+            // This is the path to the file to load the policy set
             policy_set_path,
         }
     }
