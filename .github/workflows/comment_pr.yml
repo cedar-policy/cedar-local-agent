@@ -2,7 +2,7 @@ name: Comment on the pull request
 
 on:
   workflow_run:
-    workflows: ["Generate Coverage"]
+    workflows: ["Main CI Workflow"]
     types:
       - completed
 

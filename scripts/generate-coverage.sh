@@ -13,6 +13,9 @@ grcov 'target/private/profraw/' \
   --branch \
   --ignore-not-existing \
   -o 'target/coverage/' \
-  --keep-only 'src/*';
+  --keep-only 'src/*' \
+  --excl-start '\#\[cfg\(test\)\]' \
+  --excl-stop '// GRCOV_BEGIN_COVERAGE' \
+  --excl-line '\#\[derive\('
 
 echo "Successfully generated coverage report under target/coverage/"
