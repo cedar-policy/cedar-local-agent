@@ -199,7 +199,7 @@ tracing_subscriber::registry()
 
 To filter authorization event logs, provide a log config to the authorizer with a `FieldSet` which includes the fields that are to be logged. By default if not explicitly configured, no fields will be logged.
 
-Sample usage of logging everything within the authorization request. **Note**: Logging everything is insecure; please see the section below. 
+Sample usage of logging everything within the authorization request. **Note**: Logging everything is insecure; please see [Secure Logging Configuration](#secure-logging-configuration). 
 
 ```rust
 let log_config =
