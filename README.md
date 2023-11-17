@@ -199,7 +199,7 @@ tracing_subscriber::registry()
 
 To filter authorization event logs, provide a log config to the authorizer with a `FieldSet` which includes the fields that are to be logged. By default if not explicitly configured, no fields will be logged.
 
-Sample usage of logging everything within the authorization request:
+Sample usage of logging everything within the authorization request. **Note**: Logging everything is insecure; please see the section below. 
 
 ```rust
 let log_config =
@@ -225,16 +225,16 @@ let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
 );
 ```
 
-### Availability Warning:
+### Secure Logging Configuration:
 
-Using a `log::FieldSet` configuration that sets any cedar field to `true` will result in that field being logged. 
-These fields, including the entities field, could contain sensitive information. 
-Additionally, the cedar language has no current limit on field sizes within a [`Request`](..link). 
-A large request with verbose logging can result in more disk i/o to occur.
-This disk i/o could negatively impact the performance of the application.
+Using a `log::FieldSet` configuration that sets any cedar-related field (principal, action, resource, context, and entities) to `true` will result in that field being logged. 
+These fields could contain sensitive information and should be exposed with caution. Additionally, the cedar language has no current limit on field sizes within a [`Request`](https://docs.rs/cedar-policy/2.4.0/cedar_policy/struct.Request.html). 
+A large request with verbose logging can result in more disk i/o to occur. This disk i/o could negatively impact the performance of the application.
 
-Alternatively, create a default `log::FieldSet` with `log::FieldSetBuilder::default().build().unwrap()`. 
-This option will redact user input.
+For a safe config, create a default `log::FieldSet` with `log::FieldSetBuilder::default().build().unwrap()`. 
+This option will redact user input like so: 
+
+`"entity":{"data":{"Parents":[]},"name":"Sensitive<REDACTED>","type":"Sensitive<REDACTED>"}`
 
 ### Note:
 
