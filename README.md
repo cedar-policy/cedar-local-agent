@@ -315,8 +315,8 @@ It is, therefore, left to users to take any and all necessary precautions to ens
 the `cedar-local-agent` is capable of enforcing are met. This includes:
 
 1. Filesystem permissions for on-disk Policy Stores should be limited to least-privilege, see [Limiting Access to Local Data Files](#limiting-access-to-local-data-files).
-2. Filesystem permissions for on-disk locations of OCSF logs follow least-privilege permissions, see TODO.
-3. The `cedar-local-agent` is configured securely, see TODO.
+2. Filesystem permissions for on-disk locations of OCSF logs follow least-privilege permissions, see [OCSF Log directory permissions](#ocsf-log-directory-permissions).
+3. The `cedar-local-agent` is configured securely, see [Quick Start](#quick-start) and [Updating `file::PolicySetProvider` or `file::EntityProvider` data](#updating-filepolicysetprovider-or-fileentityprovider-data) for configuration best practices.
 
 ### Limiting Access to Local Data Files
 
@@ -397,6 +397,40 @@ Finally, make **authz-local-data** readable by everyone and writable by the owne
 ```bash
 $ chmod u=rwx,go=r authz-local-data
 ```
+
+### OCSF Log directory permissions
+
+
+The local authorizer provided in this crate will require **read** and **write** access to the directory where it will write OCFS logs to.
+
+Suppose we have the following directory structure:
+
+```
+authz-agent/
+  |- authz_daemon (executable)
+
+ocsf-log-dir/
+  |- authorization.log.2023-11-15-21-02
+  ...
+```
+
+Now suppose you have an OS user to execute the "authz_daemon" called "authz-daemon".
+
+And make "authz-daemon" user the owner of  **ocsf-log-dir** folder with:
+
+```bash
+$ chown -R authz-daemon ocsf-log-dir
+```
+
+We will now make **ocsf-log-dir** readable and writable by the owner but not accessible to anyone else.
+
+```bash
+$ chmod u=wrx,g=,o= ocsf-log-dir
+```
+
+This means that only the user that runs the agent will be able to see the logs.
+The reason we recommend these restrictive permissions is that in general, most systems that handle logs such as the [AWS Cloudwatch Agent](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html) run as root (see [documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-common-scenarios.html)).
+This means that the Cloudwatch Agent (or whatever other system you choose) will be able to read the logs but other applications running on the system with non-root users will not.
 
 ## Getting Help
 
