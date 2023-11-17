@@ -1,5 +1,7 @@
 #!/bin/sh
 
+cd "$(dirname "$0")/.." || exit
+
 rustup update stable && rustup default stable && \
 
 echo ">>>> cargo fmt --all --check" && \
@@ -32,4 +34,28 @@ echo ">>>> cargo audit --deny warnings" && \
 cargo audit --deny warnings && \
 
 echo ">>>> cargo deny check" && \
-cargo deny check
+cargo deny check && \
+
+echo ">>>> Removing old test coverage artifacts" && \
+rm -rf target/coverage/ && mkdir target/coverage/ && \
+rm -rf target/private/profraw/ && mkdir target/private/profraw/ && \
+
+echo ">>>> Generating new test coverage profraw files" && \
+RUSTFLAGS="-Cinstrument-coverage" LLVM_PROFILE_FILE="target/private/profraw/%p-%m.profraw" cargo test && \
+
+echo ">>>> Generating new HTML test coverage report" && \
+grcov 'target/private/profraw/' \
+  -s '.' \
+  --binary-path 'target/debug/deps' \
+  -t html \
+  --branch \
+  --ignore-not-existing \
+  -o 'target/coverage/' \
+  --keep-only 'src/*' \
+  --excl-start '\#\[cfg\(test\)\]' \
+  --excl-stop '// GRCOV_BEGIN_COVERAGE' \
+  --excl-line '\#\[derive\(' && \
+
+echo "Successfully generated coverage report under target/coverage/" && \
+
+echo "Build Successful"

@@ -1,7 +1,7 @@
 name: Build and Test
 on:
-    workflow_call: # when invoked by any workflow
-    workflow_dispatch: # can be invoked manually
+  workflow_call: # when invoked by any workflow
+  workflow_dispatch: # can be invoked manually
 
 jobs:
   build_and_test:
@@ -24,3 +24,36 @@ jobs:
       - run: cargo bench --no-run
       - run: cargo audit --deny warnings
       - uses: EmbarkStudios/cargo-deny-action@v1 # cargo deny check
+      - name: Setup grcov dependencies
+        run: |
+          cargo install grcov
+          rustup component add llvm-tools-preview
+          mkdir -p target/coverage
+      - name: Generate profraw files from tests
+        run: >
+          CARGO_INCREMENTAL=0
+          RUSTFLAGS='-Cinstrument-coverage'
+          LLVM_PROFILE_FILE='target/private/profraw/%p-%m.profraw'
+          cargo test
+      - name: Generate lcov report
+        run: >
+          grcov 'target/private/profraw/'
+          -s '.'
+          --binary-path 'target/debug/deps/'
+          -t lcov
+          --branch
+          --ignore-not-existing
+          -o 'target/coverage/lcov.info'
+          --keep-only 'src/*'
+          --excl-start '\#\[cfg\(test\)\]'
+          --excl-stop '// GRCOV_BEGIN_COVERAGE'
+          --excl-line '\#\[derive\('
+      - name: Save PR number
+        if: ${{ github.event_name == 'pull_request' }}
+        run: echo ${{ github.event.number }} > target/coverage/pr_num
+      - uses: actions/upload-artifact@v3.1.3
+        if: ${{ github.event_name == 'pull_request' }}
+        with:
+          name: coverage-artifact
+          path: target/coverage/
+          retention-days: 1
