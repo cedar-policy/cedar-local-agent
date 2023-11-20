@@ -58,11 +58,11 @@ pub async fn main() {
     );
 
     /*
-     * Initialize the Auhtorizers with different configrations
+     * Initialize the Auhtorizers with different configurations
      */
 
     /*
-     * Default log configration
+     * Default log configurations
      * With default log configuration, the authorization logs will be generated in OpenCyberSecurityFramework (OCSF) format
      * and all cedar-related field (principal, action, resource, context, and entities) which could contian sensitive information would be redacted
      */
@@ -89,7 +89,7 @@ pub async fn main() {
         );
 
     /*
-     * Log configration specifies which field/fields to be logged
+     * Log configuration specifies which field/fields to be logged
      * With FieldSet specifies whether a field is to be logged, the authorization logs will be generated in OpenCyberSecurityFramework (OCSF) format
      * and certain cedar-related field (principal, action, resource, context, entities) would be logged, while other fields stay redacted
      */
