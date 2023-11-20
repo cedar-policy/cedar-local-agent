@@ -1,0 +1,21 @@
+[package]
+name = "ocsf-log-config-example"
+edition = "2023"
+version = "0.1.0"
+
+publish = false
+
+[dependencies]
+cedar-local-agent = { version = "0.1.0",  path = "../../../cedar-local-agent" }
+
+# Tracing
+tracing = "0.1.37"
+tracing-appender = "0.2.2"
+tracing-core = "0.1.31"
+tracing-subscriber = "0.3.17"
+
+# Cedar
+cedar-policy = "2.3.0"
+
+# Tokio
+tokio = "1.29.1"

@@ -12,6 +12,8 @@ This example demonstrates how to perform tracing logging using the Cedar Local A
 
 [Authorization Log Example](authorization_log)
 
+[Authorization Log Configuration Example](authorization_log_config)
+
 To generate the tracing log records, use the following command:
 
 ## Run the code
