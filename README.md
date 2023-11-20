@@ -414,23 +414,24 @@ ocsf-log-dir/
   ...
 ```
 
-Now suppose you have an OS user to execute the "authz_daemon" called "authz-daemon".
+Now suppose you have an OS user to execute the **authz_daemon** called **authz-daemon** which should be in a group called "log-reader".
 
-And make "authz-daemon" user the owner of  **ocsf-log-dir** folder with:
-
-```bash
-$ chown -R authz-daemon ocsf-log-dir
-```
-
-We will now make **ocsf-log-dir** readable and writable by the owner but not accessible to anyone else.
+And make **authz-daemon** user the owner of  **ocsf-log-dir** folder with:
 
 ```bash
-$ chmod u=wrx,g=,o= ocsf-log-dir
+$ chown -R authz-daemon:log-reader ocsf-log-dir
 ```
 
-This means that only the user that runs the agent will be able to see the logs.
-The reason we recommend these restrictive permissions is that in general, most systems that handle logs such as the [AWS Cloudwatch Agent](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html) run as root (see [documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-common-scenarios.html)).
-This means that the Cloudwatch Agent (or whatever other system you choose) will be able to read the logs but other applications running on the system with non-root users will not.
+We will now make **ocsf-log-dir** readable and writable by the owner but not writable to anyone else.
+We allow anyone in the **log-reader** group to read the contents of the folder but not write to it.
+
+```bash
+$ chmod u=wrx,g=rx,o= ocsf-log-dir
+```
+
+NOTE: We need to allow **execute** permissions in order to access files in the directory.
+
+Any agent that needs to access the logs, such as the [AWS Cloudwatch Agent](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/Install-CloudWatch-Agent.html) should run as a user in the log-reader group so that they will have the proper access (see [documentation](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/CloudWatch-Agent-common-scenarios.html) for how to configure the Cloudwatch Agent to run as a certain user).
 
 ## Getting Help
 
