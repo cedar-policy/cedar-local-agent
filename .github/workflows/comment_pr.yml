@@ -8,6 +8,10 @@ on:
 
 jobs:
   comment:
+    permissions:
+      contents: read       # to read from the repo
+      pull-requests: write # to create or update comment
+      actions: read        # to download artifact
     runs-on: ubuntu-latest
     if: ${{ github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' }}
     steps:
@@ -17,7 +21,6 @@ jobs:
           workflow: ${{ github.event.workflow_run.workflow_id }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           name: coverage-artifact
-      - run: ls
       - name: Get PR number
         id: get-pr
         run: echo NUM=$(cat pr_num) >> "$GITHUB_OUTPUT"
