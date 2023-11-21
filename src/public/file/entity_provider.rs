@@ -209,21 +209,32 @@ impl UpdateProviderData for EntityProvider {
     #[instrument(skip(self), err(Debug))]
     async fn update_provider_data(&self) -> Result<(), UpdateProviderDataError> {
         let entities = if let Some(entities_path) = self.entities_path.as_ref() {
-            let entities_file = File::open(entities_path)
-                .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
+            let entities_file = File::open(entities_path).map_err(|e| {
+                UpdateProviderDataError::General(Box::new(ProviderError::IOError(e)))
+            })?;
 
             let entities = if let Some(schema_path) = self.schema_path.as_ref() {
-                let schema_file = File::open(schema_path)
-                    .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
-                let schema = Schema::from_file(schema_file)
-                    .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
-                let res = Entities::from_json_file(entities_file, Some(&schema))
-                    .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
+                let schema_file = File::open(schema_path).map_err(|e| {
+                    UpdateProviderDataError::General(Box::new(ProviderError::IOError(e)))
+                })?;
+                let schema = Schema::from_file(schema_file).map_err(|_| {
+                    UpdateProviderDataError::General(Box::new(ProviderError::SchemaParseError(
+                        schema_path.to_string(),
+                    )))
+                })?;
+                let res = Entities::from_json_file(entities_file, Some(&schema)).map_err(|_| {
+                    UpdateProviderDataError::General(Box::new(ProviderError::EntitiesError(
+                        entities_path.to_string(),
+                    )))
+                })?;
                 debug!("Updated Entities from file with Schema: entities_file_path={entities_path:?}: schema_file_path={schema_path:?}");
                 res
             } else {
-                let res = Entities::from_json_file(entities_file, None)
-                    .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
+                let res = Entities::from_json_file(entities_file, None).map_err(|_| {
+                    UpdateProviderDataError::General(Box::new(ProviderError::EntitiesError(
+                        entities_path.to_string(),
+                    )))
+                })?;
                 debug!("Updated Entities from file: entities_file_path={entities_path:?}");
                 res
             };
@@ -257,9 +268,12 @@ impl SimpleEntityProvider for EntityProvider {
 #[cfg(test)]
 mod test {
     use cedar_policy::{Context, Request};
+    use std::io::ErrorKind;
+    use std::{fs, io};
+    use tempfile::NamedTempFile;
 
-    use crate::public::file::entity_provider::{ConfigBuilder, EntityProvider};
-    use crate::public::{SimpleEntityProvider, UpdateProviderData};
+    use crate::public::file::entity_provider::{ConfigBuilder, EntityProvider, ProviderError};
+    use crate::public::{SimpleEntityProvider, UpdateProviderData, UpdateProviderDataError};
 
     #[test]
     fn entity_provider_default_is_ok() {
@@ -411,5 +425,110 @@ mod test {
 
         assert!(provider.is_ok());
         assert!(provider.unwrap().update_provider_data().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn entity_provider_update_is_io_error() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_str().unwrap().to_string();
+        fs::copy("tests/data/sweets.entities.json", temp_file_path.clone()).unwrap();
+        let provider = EntityProvider::new(
+            ConfigBuilder::default()
+                .entities_path(temp_file_path)
+                .build()
+                .unwrap(),
+        );
+
+        assert!(provider.is_ok());
+        let entity_provider = provider.unwrap();
+        temp_file.close().unwrap();
+        let actual = entity_provider.update_provider_data().await.unwrap_err();
+        let expect =
+            UpdateProviderDataError::General(Box::new(ProviderError::IOError(io::Error::new(
+                ErrorKind::NotFound,
+                "No such file or directory (os error 2)",
+            ))));
+
+        assert_eq!(actual.to_string(), expect.to_string());
+    }
+
+    #[tokio::test]
+    async fn entity_provider_update_is_entity_error() {
+        let temp_entity = NamedTempFile::new().unwrap();
+        let temp_entity_path = temp_entity.path().to_str().unwrap().to_string();
+        fs::copy("tests/data/sweets.entities.json", temp_entity_path.clone()).unwrap();
+
+        let temp_schema = NamedTempFile::new().unwrap();
+        let temp_schema_path = temp_schema.path().to_str().unwrap().to_string();
+        fs::copy(
+            "tests/data/sweets.schema.cedar.json",
+            temp_schema_path.clone(),
+        )
+        .unwrap();
+
+        let provider = EntityProvider::new(
+            ConfigBuilder::default()
+                .entities_path(temp_entity_path.clone())
+                .schema_path(temp_schema_path.clone())
+                .build()
+                .unwrap(),
+        );
+        assert!(provider.is_ok());
+
+        let entity_provider = provider.unwrap();
+
+        fs::copy(
+            "tests/data/malformed_entities.json",
+            temp_entity_path.clone(),
+        )
+        .unwrap();
+
+        let update_result = entity_provider.update_provider_data().await;
+        assert!(update_result.is_err());
+        let update_provider_error = update_result.unwrap_err();
+
+        let UpdateProviderDataError::General(inner_error) = update_provider_error;
+        let inner_type = inner_error.downcast_ref::<ProviderError>().unwrap();
+        assert!(matches!(inner_type, ProviderError::EntitiesError(_)));
+    }
+
+    #[tokio::test]
+    async fn entity_provider_update_is_schema_error() {
+        let temp_entity = NamedTempFile::new().unwrap();
+        let temp_entity_path = temp_entity.path().to_str().unwrap().to_string();
+        fs::copy("tests/data/sweets.entities.json", temp_entity_path.clone()).unwrap();
+
+        let temp_schema = NamedTempFile::new().unwrap();
+        let temp_schema_path = temp_schema.path().to_str().unwrap().to_string();
+        fs::copy(
+            "tests/data/sweets.schema.cedar.json",
+            temp_schema_path.clone(),
+        )
+        .unwrap();
+
+        let provider = EntityProvider::new(
+            ConfigBuilder::default()
+                .entities_path(temp_entity_path.clone())
+                .schema_path(temp_schema_path.clone())
+                .build()
+                .unwrap(),
+        );
+        assert!(provider.is_ok());
+
+        let entity_provider = provider.unwrap();
+
+        fs::copy(
+            "tests/data/schema_bad.cedarschema.json",
+            temp_schema_path.clone(),
+        )
+        .unwrap();
+
+        let update_result = entity_provider.update_provider_data().await;
+        assert!(update_result.is_err());
+        let update_provider_error = update_result.unwrap_err();
+
+        let UpdateProviderDataError::General(inner_error) = update_provider_error;
+        let inner_type = inner_error.downcast_ref::<ProviderError>().unwrap();
+        assert!(matches!(inner_type, ProviderError::SchemaParseError(_)));
     }
 }
