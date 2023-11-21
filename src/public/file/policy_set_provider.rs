@@ -146,9 +146,12 @@ impl UpdateProviderData for PolicySetProvider {
     async fn update_provider_data(&self) -> Result<(), UpdateProviderDataError> {
         let policy_set_path = self.policy_set_path.clone();
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))
-            .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
-        let policy_set = PolicySet::from_str(&policy_set_src)
-            .map_err(|e| UpdateProviderDataError::General(Box::new(e)))?;
+            .map_err(|e| UpdateProviderDataError::General(Box::new(ProviderError::IOError(e))))?;
+        let policy_set = PolicySet::from_str(&policy_set_src).map_err(|_| {
+            UpdateProviderDataError::General(Box::new(ProviderError::PolicySetParseError(
+                policy_set_path.clone(),
+            )))
+        })?;
         {
             let mut policy_set_guard = self.policy_set.write().await;
             *policy_set_guard = Arc::new(policy_set.clone());
@@ -178,10 +181,15 @@ impl SimplePolicySetProvider for PolicySetProvider {
 #[cfg(test)]
 mod test {
     use cedar_policy::{Context, Request};
+    use std::io::ErrorKind;
+    use std::{fs, io};
+    use tempfile::NamedTempFile;
 
-    use crate::public::file::policy_set_provider::{ConfigBuilder, PolicySetProvider};
-    use crate::public::{SimplePolicySetProvider, UpdateProviderData};
-
+    use crate::public::file::policy_set_provider::ProviderError::PolicySetParseError;
+    use crate::public::file::policy_set_provider::{
+        ConfigBuilder, PolicySetProvider, ProviderError,
+    };
+    use crate::public::{SimplePolicySetProvider, UpdateProviderData, UpdateProviderDataError};
     #[test]
     fn simple_policy_provider_is_ok() {
         assert!(PolicySetProvider::new(
@@ -258,5 +266,57 @@ mod test {
 
         assert!(provider.is_ok());
         assert!(provider.unwrap().update_provider_data().await.is_ok());
+    }
+
+    #[tokio::test]
+    async fn simple_policy_provider_update_is_parse_error() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_str().unwrap().to_string();
+        fs::copy("tests/data/sweets.cedar", temp_file_path.clone()).unwrap();
+
+        let provider = PolicySetProvider::new(
+            ConfigBuilder::default()
+                .policy_set_path(temp_file_path.clone())
+                .build()
+                .unwrap(),
+        );
+        assert!(provider.is_ok());
+
+        let policy_set_provider = provider.unwrap();
+
+        fs::copy(
+            "tests/data/malformed_policies.cedar",
+            temp_file_path.clone(),
+        )
+        .unwrap();
+
+        let update_result = policy_set_provider.update_provider_data().await;
+        assert!(update_result.is_err());
+        let update_provider_error = update_result.unwrap_err();
+
+        let UpdateProviderDataError::General(inner_error) = update_provider_error;
+        let inner_type = inner_error.downcast_ref::<ProviderError>().unwrap();
+        assert!(matches!(inner_type, PolicySetParseError(_)));
+    }
+    #[tokio::test]
+    async fn simple_policy_provider_update_is_io_error() {
+        let temp_file = NamedTempFile::new().unwrap();
+        let temp_file_path = temp_file.path().to_str().unwrap().to_string();
+        let provider = PolicySetProvider::new(
+            ConfigBuilder::default()
+                .policy_set_path(temp_file_path)
+                .build()
+                .unwrap(),
+        );
+        temp_file.close().unwrap();
+
+        let actual = provider.unwrap().update_provider_data().await.unwrap_err();
+        let expect =
+            UpdateProviderDataError::General(Box::new(ProviderError::IOError(io::Error::new(
+                ErrorKind::NotFound,
+                "No such file or directory (os error 2)",
+            ))));
+
+        assert_eq!(actual.to_string(), expect.to_string());
     }
 }
