@@ -184,7 +184,7 @@ fn validate_request(entities: &Entities) -> Result<(), AuthorizerError> {
     let num_entities = entities.iter().map(Entity::uid).count();
     if num_entities > MAX_ENTITIES_COUNT {
         return Err(AuthorizerError::General(Box::new(ValidationError(
-            String::from("Number of entities exceeded max of {}"),
+            format!("Number of entities exceeded max of {}", 100),
         ))));
     }
     Ok(())
