@@ -37,8 +37,8 @@ echo ">>>> cargo deny check" && \
 cargo deny check && \
 
 echo ">>>> Removing old test coverage artifacts" && \
-rm -rf target/coverage/ && mkdir target/coverage/ && \
-rm -rf target/private/profraw/ && mkdir target/private/profraw/ && \
+rm -rf target/coverage/ && mkdir -p target/coverage/ && \
+rm -rf target/private/profraw/ && mkdir -p target/private/profraw/ && \
 
 echo ">>>> Generating new test coverage profraw files" && \
 RUSTFLAGS="-Cinstrument-coverage" LLVM_PROFILE_FILE="target/private/profraw/%p-%m.profraw" cargo test && \
