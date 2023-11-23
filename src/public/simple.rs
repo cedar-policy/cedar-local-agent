@@ -11,7 +11,9 @@ use uuid::Uuid;
 
 use crate::public::log::schema::OpenCyberSecurityFramework;
 use crate::public::log::ConfigBuilderError::ValidationError;
-use crate::public::{log, EntityProviderError, SimpleEntityProvider, MAX_ENTITIES_COUNT};
+use crate::public::{
+    log, EntityProviderError, SimpleEntityProvider, MAX_ENTITIES_COUNT, MAX_REQUEST_SIZE_BYTES,
+};
 use crate::public::{PolicySetProviderError, SimplePolicySetProvider};
 
 /// The `AuthorizerConfig` provides customers the ability to build their own
@@ -126,6 +128,8 @@ where
     ) -> Result<Response, AuthorizerError> {
         info!("Received request, running is_authorized...");
 
+        validate_request(request)?;
+
         let entities_future = self.entity_provider.get_entities(request);
         let policy_set_future = self.policy_set_provider.get_policy_set(request);
         let (fetched_entities, policy_set) = join!(entities_future, policy_set_future);
@@ -137,7 +141,7 @@ where
                 .cloned(),
         )
         .map_err(|e| AuthorizerError::General(Box::new(e)))?;
-        validate_request(&merged_entities)?;
+        validate_entities(&merged_entities)?;
 
         let response = cedar_policy::Authorizer::new().is_authorized(
             request,
@@ -180,7 +184,17 @@ where
     }
 }
 
-fn validate_request(entities: &Entities) -> Result<(), AuthorizerError> {
+fn validate_request(request: &Request) -> Result<(), AuthorizerError> {
+    let request_string_length = request.to_string().len();
+    if request_string_length > MAX_REQUEST_SIZE_BYTES {
+        return Err(AuthorizerError::General(Box::new(ValidationError(
+            format!("Request exceeded maximum byte size of {MAX_REQUEST_SIZE_BYTES}"),
+        ))));
+    }
+    Ok(())
+}
+
+fn validate_entities(entities: &Entities) -> Result<(), AuthorizerError> {
     let num_entities = entities.iter().map(Entity::uid).count();
     if num_entities > MAX_ENTITIES_COUNT {
         return Err(AuthorizerError::General(Box::new(ValidationError(

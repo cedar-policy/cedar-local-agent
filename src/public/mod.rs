@@ -11,8 +11,10 @@ pub mod file;
 pub mod log;
 pub mod simple;
 
-// Note: This is an initial setting. We may adjust this maximum as we learn more
+// Note: These are initial settings. We may adjust these maximums as we learn more
 const MAX_ENTITIES_COUNT: usize = 100;
+// Equal to 10KB (1KB = 1024 bytes)
+const MAX_REQUEST_SIZE_BYTES: usize = 10_240;
 
 /// `EntityProviderError` is a general error that any implementation of trait
 /// `SimpleEntityProvider` can return as an error.
