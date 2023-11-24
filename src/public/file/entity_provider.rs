@@ -298,7 +298,7 @@ mod test {
                 .unwrap(),
         )
         .unwrap();
-        let expect = entity_provider
+        let actual = entity_provider
             .get_entities(&Request::new(
                 Some(r#"User::"Eric""#.parse().unwrap()),
                 Some(r#"Action::"View""#.parse().unwrap()),
@@ -309,8 +309,8 @@ mod test {
             .unwrap();
 
         let entities_file = File::open("tests/data/sweets.entities.json").unwrap();
-        let actual = Entities::from_json_file(entities_file, None).unwrap();
-        assert_eq!(actual, *expect);
+        let expect = Entities::from_json_file(entities_file, None).unwrap();
+        assert_eq!(*actual, expect);
     }
 
     #[test]

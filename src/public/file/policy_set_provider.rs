@@ -246,7 +246,7 @@ mod test {
 
         assert!(provider.is_ok());
 
-        let expect = provider
+        let actual = provider
             .unwrap()
             .get_policy_set(&Request::new(
                 Some(r#"User::"Adam""#.parse().unwrap()),
@@ -258,9 +258,9 @@ mod test {
             .unwrap();
 
         let policy_str = fs::read_to_string(Path::new("tests/data/sweets.cedar")).unwrap();
-        let actual = PolicySet::from_str(policy_str.as_str()).unwrap();
+        let expect = PolicySet::from_str(policy_str.as_str()).unwrap();
 
-        assert_eq!(actual, *expect);
+        assert_eq!(*actual, expect);
     }
 
     #[tokio::test]

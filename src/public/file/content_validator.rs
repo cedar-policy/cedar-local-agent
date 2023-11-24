@@ -4,11 +4,11 @@
 use std::fmt::{Display, Formatter};
 use std::fs::File;
 use std::io;
-use std::io::{BufRead, BufReader};
+use std::io::{BufReader, Read};
 use std::path::Path;
 use thiserror::Error;
 
-/// The `FileReaderError` occurs when the file operation failed or not in the valid format.
+/// The `BufferReaderError` occurs when the file operation failed or not in the valid format.
 #[derive(Error, Debug)]
 pub enum BufferReaderError {
     /// Indicates that the file size exceeds the allowed limit default = 100MB.
@@ -130,7 +130,7 @@ where
     }
 }
 
-/// `FileReader` is wrapper class which will perform some validations such as file size, file
+/// `BufferReader` is wrapper class which will perform some validations such as file size, file
 /// encoding, etc. If the file is valid, it will construct it with the `BufReader`.
 #[derive(Debug)]
 pub struct BufferReader {
@@ -146,13 +146,12 @@ impl BufferReader {
     /// This function can error if the file content is not ascii encoded.
     pub fn read_to_string(self) -> Result<String, BufferReaderError> {
         let mut buf_reader = self.reader;
-        let mut line = String::new();
-        while buf_reader.read_line(&mut line)? > 0 {
-            if !line.is_ascii() {
-                return Err(BufferReaderError::NonAsciiEncoded);
-            }
+        let mut content = String::new();
+        buf_reader.read_to_string(&mut content)?;
+        if !content.is_ascii() {
+            return Err(BufferReaderError::NonAsciiEncoded);
         }
-        Ok(line)
+        Ok(content)
     }
 
     /// Return the `BufReader`
@@ -186,15 +185,16 @@ mod tests {
     fn file_open_is_ok() {
         let mut temp_file = NamedTempFile::new().unwrap();
         let temp_file_path = temp_file.path().to_str().unwrap().to_string();
-        let string_data = "This is the testing string with len 38";
+        let string_data = "This is the testing string";
         temp_file.write_all(string_data.as_bytes()).unwrap();
+
         let f = FileConfig::file(temp_file_path);
         let reader = BufferReader::open(&f);
         assert!(reader.is_ok());
         let mut reader = reader.unwrap();
         let mut line = String::new();
         let len = reader.reader.read_line(&mut line).unwrap();
-        assert_eq!(len, 38);
+        assert_eq!(len, string_data.len());
     }
 
     #[test]
@@ -213,8 +213,9 @@ mod tests {
         let f = FileConfig::file("tests/data/sweets.cedar");
         let reader = BufferReader::open(&f);
         assert!(reader.is_ok());
-        let expect = reader.unwrap().read_to_string().unwrap();
-        let actual = fs::read_to_string("tests/data/sweets.cedar").unwrap();
+        let actual = reader.unwrap().read_to_string().unwrap();
+
+        let expect = fs::read_to_string("tests/data/sweets.cedar").unwrap();
         assert_eq!(expect, actual);
     }
 
@@ -222,11 +223,12 @@ mod tests {
     fn file_open_and_to_string_is_non_ascii_encoding() {
         let mut temp_file = NamedTempFile::new().unwrap();
         let temp_file_path = temp_file.path().to_str().unwrap().to_string();
-        let string_data = "#♠♣♥♦#";
-        temp_file.write_all(string_data.as_bytes()).unwrap();
+        let non_ascii_string = "#♠♣♥♦#";
+        temp_file.write_all(non_ascii_string.as_bytes()).unwrap();
         let f = FileConfig::file(temp_file_path);
         let reader = BufferReader::open(&f);
         assert!(reader.is_ok());
+
         let reader = reader.unwrap().read_to_string();
         assert!(matches!(reader.unwrap_err(), NonAsciiEncoded));
     }
