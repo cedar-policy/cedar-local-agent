@@ -226,6 +226,14 @@ let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
 );
 ```
 
+Note: ``Authorizer`` ``log_config`` ``FieldSet::entities `` refers to the Cedar entities. 
+There is also an [OCSF](https://github.com/ocsf) field called [``entity``](https://github.com/cedar-policy/cedar-local-agent/blob/main/src/public/log/schema.rs#L86) which refers to the principal entity that is sending the request.
+
+This means that when ``Authorizer`` ``log_config`` ``FieldSet::entities`` is set to ``FieldLevel::None``, the OCSF entity will still be logged. 
+This is not a bug and is expected behaviour.
+
+For more examples of how to set up the authorization logging, see our [usage examples](https://github.com/cedar-policy/cedar-local-agent/tree/main/examples/tracing/authorization_log)
+
 ### Secure Logging Configuration:
 
 Using a `log::FieldSet` configuration that sets any cedar-related field (principal, action, resource, context, and entities) to `true` will result in that field being logged. 
