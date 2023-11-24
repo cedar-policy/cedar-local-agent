@@ -14,8 +14,6 @@
 //! );
 //! ```
 use std::fmt::Debug;
-use std::io::Error;
-use std::path::Path;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -26,6 +24,7 @@ use thiserror::Error;
 use tokio::sync::RwLock;
 use tracing::{debug, info, instrument};
 
+use crate::public::file::content_validator::{BufferReader, BufferReaderError, FileConfig};
 use crate::public::{
     PolicySetProviderError, SimplePolicySetProvider, UpdateProviderData, UpdateProviderDataError,
 };
@@ -67,7 +66,7 @@ pub enum ProviderError {
     PolicySetParseError(String),
     /// Can't read from disk or find the file
     #[error("IO Error: {0}")]
-    IOError(#[source] std::io::Error),
+    IOError(#[from] BufferReaderError),
 }
 
 /// A wrapper that wraps policy set `ParseError` to map the error message
@@ -84,13 +83,6 @@ impl ParseErrorWrapper {
             // This is the path to the file to load the policy set
             policy_set_path,
         }
-    }
-}
-
-/// Map the `IOError` to the `ProviderError::IOError`
-impl From<std::io::Error> for ProviderError {
-    fn from(value: Error) -> Self {
-        Self::IOError(value)
     }
 }
 
@@ -123,7 +115,8 @@ impl PolicySetProvider {
     #[instrument(skip(configuration), err(Debug))]
     pub fn new(configuration: Config) -> Result<Self, ProviderError> {
         let policy_set_path = configuration.policy_set_path;
-        let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))?;
+        let policy_set_src =
+            BufferReader::open(&FileConfig::file(policy_set_path.as_str()))?.read_to_string()?;
         let policy_set = PolicySet::from_str(&policy_set_src)
             .map_err(|_parse_errors| ParseErrorWrapper::new(policy_set_path.clone()))?;
         let policy_ids = policy_set
@@ -145,8 +138,13 @@ impl UpdateProviderData for PolicySetProvider {
     #[instrument(skip(self), err(Debug))]
     async fn update_provider_data(&self) -> Result<(), UpdateProviderDataError> {
         let policy_set_path = self.policy_set_path.clone();
-        let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))
+        let policy_file = BufferReader::open(&FileConfig::file(policy_set_path.as_str()))
             .map_err(|e| UpdateProviderDataError::General(Box::new(ProviderError::IOError(e))))?;
+
+        let policy_set_src = policy_file
+            .read_to_string()
+            .map_err(|e| UpdateProviderDataError::General(Box::new(ProviderError::IOError(e))))?;
+
         let policy_set = PolicySet::from_str(&policy_set_src).map_err(|_| {
             UpdateProviderDataError::General(Box::new(ProviderError::PolicySetParseError(
                 policy_set_path.clone(),
@@ -180,16 +178,20 @@ impl SimplePolicySetProvider for PolicySetProvider {
 
 #[cfg(test)]
 mod test {
-    use cedar_policy::{Context, Request};
+    use cedar_policy::{Context, PolicySet, Request};
     use std::io::ErrorKind;
+    use std::path::Path;
+    use std::str::FromStr;
     use std::{fs, io};
     use tempfile::NamedTempFile;
 
+    use crate::public::file::content_validator::BufferReaderError;
     use crate::public::file::policy_set_provider::ProviderError::PolicySetParseError;
     use crate::public::file::policy_set_provider::{
         ConfigBuilder, PolicySetProvider, ProviderError,
     };
     use crate::public::{SimplePolicySetProvider, UpdateProviderData, UpdateProviderDataError};
+
     #[test]
     fn simple_policy_provider_is_ok() {
         assert!(PolicySetProvider::new(
@@ -213,7 +215,7 @@ mod test {
         assert!(error.is_err());
         assert_eq!(
             error.err().unwrap().to_string(),
-            "IO Error: No such file or directory (os error 2)"
+            "IO Error: IO Error, reason = No such file or directory (os error 2)"
         );
     }
 
@@ -243,7 +245,8 @@ mod test {
         );
 
         assert!(provider.is_ok());
-        assert!(provider
+
+        let expect = provider
             .unwrap()
             .get_policy_set(&Request::new(
                 Some(r#"User::"Adam""#.parse().unwrap()),
@@ -252,7 +255,12 @@ mod test {
                 Context::empty(),
             ))
             .await
-            .is_ok());
+            .unwrap();
+
+        let policy_str = fs::read_to_string(Path::new("tests/data/sweets.cedar")).unwrap();
+        let actual = PolicySet::from_str(policy_str.as_str()).unwrap();
+
+        assert_eq!(actual, *expect);
     }
 
     #[tokio::test]
@@ -311,11 +319,12 @@ mod test {
         temp_file.close().unwrap();
 
         let actual = provider.unwrap().update_provider_data().await.unwrap_err();
-        let expect =
-            UpdateProviderDataError::General(Box::new(ProviderError::IOError(io::Error::new(
+        let expect = UpdateProviderDataError::General(Box::new(ProviderError::IOError(
+            BufferReaderError::IoError(io::Error::new(
                 ErrorKind::NotFound,
                 "No such file or directory (os error 2)",
-            ))));
+            )),
+        )));
 
         assert_eq!(actual.to_string(), expect.to_string());
     }

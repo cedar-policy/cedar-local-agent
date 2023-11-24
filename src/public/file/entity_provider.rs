@@ -15,8 +15,6 @@
 //! );
 //! ```
 use std::fmt::Debug;
-use std::fs::File;
-use std::io::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -26,6 +24,7 @@ use thiserror::Error;
 use tokio::sync::RwLock;
 use tracing::{debug, info, instrument};
 
+use crate::public::file::content_validator::{BufferReader, BufferReaderError, FileConfig};
 use crate::public::{
     EntityProviderError, SimpleEntityProvider, UpdateProviderData, UpdateProviderDataError,
 };
@@ -70,7 +69,7 @@ pub struct EntityProvider {
 pub enum ProviderError {
     /// Can't read from disk or find the file
     #[error("IO Error: {0}")]
-    IOError(#[source] std::io::Error),
+    IOError(#[from] BufferReaderError),
     /// Schema file is malformed in some way
     #[error("The Schema file failed to be parsed at path: {0}")]
     SchemaParseError(String),
@@ -113,13 +112,6 @@ impl SchemaParseErrorWrapper {
     }
 }
 
-/// Map the `IOError` to the `ProvideError::IOError`
-impl From<Error> for ProviderError {
-    fn from(value: Error) -> Self {
-        Self::IOError(value)
-    }
-}
-
 /// Map the `SchemaParseErrorWrapper` to the `ProvideError::SchemaParseError` with the file path
 impl From<SchemaParseErrorWrapper> for ProviderError {
     fn from(value: SchemaParseErrorWrapper) -> Self {
@@ -159,10 +151,10 @@ impl EntityProvider {
     #[instrument(skip(configuration), err(Debug))]
     pub fn new(configuration: Config) -> Result<Self, ProviderError> {
         let entities = if let Some(entities_path) = configuration.entities_path.as_ref() {
-            let entities_file = File::open(entities_path)?;
+            let entities_file = BufferReader::open(&FileConfig::file(entities_path))?.reader;
 
             let entities = if let Some(schema_path) = configuration.schema_path.as_ref() {
-                let schema_file = File::open(schema_path)?;
+                let schema_file = BufferReader::open(&FileConfig::file(schema_path))?.reader;
                 let schema = Schema::from_file(schema_file)
                     .map_err(|_schema_error| SchemaParseErrorWrapper::new(schema_path.clone()))?;
                 let res = Entities::from_json_file(entities_file, Some(&schema))
@@ -209,14 +201,16 @@ impl UpdateProviderData for EntityProvider {
     #[instrument(skip(self), err(Debug))]
     async fn update_provider_data(&self) -> Result<(), UpdateProviderDataError> {
         let entities = if let Some(entities_path) = self.entities_path.as_ref() {
-            let entities_file = File::open(entities_path).map_err(|e| {
-                UpdateProviderDataError::General(Box::new(ProviderError::IOError(e)))
-            })?;
+            let entities_file = BufferReader::open(&FileConfig::file(entities_path))
+                .map_err(|e| UpdateProviderDataError::General(Box::new(ProviderError::IOError(e))))?
+                .reader;
 
             let entities = if let Some(schema_path) = self.schema_path.as_ref() {
-                let schema_file = File::open(schema_path).map_err(|e| {
-                    UpdateProviderDataError::General(Box::new(ProviderError::IOError(e)))
-                })?;
+                let schema_file = BufferReader::open(&FileConfig::file(schema_path))
+                    .map_err(|e| {
+                        UpdateProviderDataError::General(Box::new(ProviderError::IOError(e)))
+                    })?
+                    .reader;
                 let schema = Schema::from_file(schema_file).map_err(|_| {
                     UpdateProviderDataError::General(Box::new(ProviderError::SchemaParseError(
                         schema_path.to_string(),
@@ -267,11 +261,13 @@ impl SimpleEntityProvider for EntityProvider {
 
 #[cfg(test)]
 mod test {
-    use cedar_policy::{Context, Request};
+    use cedar_policy::{Context, Entities, Request};
+    use std::fs::File;
     use std::io::ErrorKind;
     use std::{fs, io};
     use tempfile::NamedTempFile;
 
+    use crate::public::file::content_validator::BufferReaderError;
     use crate::public::file::entity_provider::{ConfigBuilder, EntityProvider, ProviderError};
     use crate::public::{SimpleEntityProvider, UpdateProviderData, UpdateProviderDataError};
 
@@ -291,6 +287,30 @@ mod test {
                 .unwrap(),
         )
         .is_ok());
+    }
+
+    #[tokio::test]
+    async fn entity_provider_is_ok_with_reader() {
+        let entity_provider = EntityProvider::new(
+            ConfigBuilder::default()
+                .entities_path("tests/data/sweets.entities.json")
+                .build()
+                .unwrap(),
+        )
+        .unwrap();
+        let expect = entity_provider
+            .get_entities(&Request::new(
+                Some(r#"User::"Eric""#.parse().unwrap()),
+                Some(r#"Action::"View""#.parse().unwrap()),
+                Some(r#"Box::"10""#.parse().unwrap()),
+                Context::empty(),
+            ))
+            .await
+            .unwrap();
+
+        let entities_file = File::open("tests/data/sweets.entities.json").unwrap();
+        let actual = Entities::from_json_file(entities_file, None).unwrap();
+        assert_eq!(actual, *expect);
     }
 
     #[test]
@@ -338,7 +358,7 @@ mod test {
         assert!(error.is_err());
         assert_eq!(
             error.err().unwrap().to_string(),
-            "IO Error: No such file or directory (os error 2)"
+            "IO Error: IO Error, reason = No such file or directory (os error 2)"
         );
     }
 
@@ -355,7 +375,7 @@ mod test {
         assert!(error.is_err());
         assert_eq!(
             error.err().unwrap().to_string(),
-            "IO Error: No such file or directory (os error 2)"
+            "IO Error: IO Error, reason = No such file or directory (os error 2)"
         );
     }
 
@@ -443,11 +463,12 @@ mod test {
         let entity_provider = provider.unwrap();
         temp_file.close().unwrap();
         let actual = entity_provider.update_provider_data().await.unwrap_err();
-        let expect =
-            UpdateProviderDataError::General(Box::new(ProviderError::IOError(io::Error::new(
+        let expect = UpdateProviderDataError::General(Box::new(ProviderError::IOError(
+            BufferReaderError::IoError(io::Error::new(
                 ErrorKind::NotFound,
                 "No such file or directory (os error 2)",
-            ))));
+            )),
+        )));
 
         assert_eq!(actual.to_string(), expect.to_string());
     }
