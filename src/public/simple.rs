@@ -12,7 +12,8 @@ use uuid::Uuid;
 use crate::public::log::schema::OpenCyberSecurityFramework;
 use crate::public::log::ConfigBuilderError::ValidationError;
 use crate::public::{
-    log, EntityProviderError, SimpleEntityProvider, MAX_ENTITIES_COUNT, MAX_REQUEST_SIZE_BYTES,
+    log, EntityProviderError, SimpleEntityProvider, MAX_ENTITIES_COUNT, MAX_ENTITIES_SIZE_BYTES,
+    MAX_REQUEST_SIZE_BYTES,
 };
 use crate::public::{PolicySetProviderError, SimplePolicySetProvider};
 
@@ -185,33 +186,39 @@ where
 }
 
 fn validate_request(request: &Request) -> Result<(), AuthorizerError> {
-    let request_string_length = request.to_string().len();
-    if request_string_length > MAX_REQUEST_SIZE_BYTES {
-        return Err(AuthorizerError::General(Box::new(ValidationError(
-            format!("Request exceeded maximum byte size of {MAX_REQUEST_SIZE_BYTES}"),
-        ))));
-    }
-    Ok(())
+    let request_size_bytes = request.to_string().len();
+    let is_valid = request_size_bytes <= MAX_REQUEST_SIZE_BYTES;
+    let error_msg = format!("Request exceeded maximum byte size of {MAX_REQUEST_SIZE_BYTES}");
+    validate(is_valid, error_msg)
 }
 
 fn validate_entities(entities: &Entities) -> Result<(), AuthorizerError> {
     let num_entities = entities.iter().map(Entity::uid).count();
-    if num_entities > MAX_ENTITIES_COUNT {
-        return Err(AuthorizerError::General(Box::new(ValidationError(
-            format!("Number of entities exceeded max of {MAX_ENTITIES_COUNT}"),
-        ))));
-    }
-    Ok(())
+    let is_valid_count = num_entities <= MAX_ENTITIES_COUNT;
+    let error_msg = format!("Number of entities exceeded max of {MAX_ENTITIES_COUNT}");
+    validate(is_valid_count, error_msg)?;
+
+    let entities_size: usize = entities.iter().map(|e| e.to_string().len()).sum();
+    let is_valid_size = entities_size <= MAX_ENTITIES_SIZE_BYTES;
+    let error_msg = format!("Entities exceeded maximum byte size of {MAX_ENTITIES_SIZE_BYTES}");
+    validate(is_valid_size, error_msg)
+}
+
+fn validate(is_valid: bool, error_msg: String) -> Result<(), AuthorizerError> {
+    is_valid
+        .then_some(())
+        .ok_or_else(|| AuthorizerError::General(Box::new(ValidationError(error_msg))))
 }
 
 #[cfg(test)]
 mod test {
     use std::fmt::Error;
     use std::fs::File;
+    use std::str::FromStr;
     use std::sync::Arc;
 
     use async_trait::async_trait;
-    use cedar_policy::{Context, Entities, PolicySet, Request};
+    use cedar_policy::{Context, Entities, EntityUid, PolicySet, Request};
     use cedar_policy_core::authorizer::Decision;
 
     use crate::public::log::DEFAULT_REQUESTER_NAME;
@@ -294,6 +301,55 @@ mod test {
                 &test_entities,
             )
             .await;
+
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn simple_authorizer_request_principal_too_large() {
+        let authorizer = Authorizer::new(
+            AuthorizerConfigBuilder::default()
+                .policy_set_provider(Arc::new(MockPolicySetProvider))
+                .entity_provider(Arc::new(MockEntityProvider))
+                .build()
+                .unwrap(),
+        );
+
+        let buff = "AA".repeat(10_000);
+        let fuzz_input = format!("User::\"{buff}\"");
+        let principal = EntityUid::from_str(&fuzz_input).unwrap();
+        let request = Request::new(
+            Some(principal),
+            Some(r#"Action::"View""#.parse().unwrap()),
+            Some(r#"Box::"10""#.parse().unwrap()),
+            Context::empty(),
+        );
+        let entities = Entities::empty();
+        let result = authorizer.is_authorized(&request, &entities).await;
+
+        assert!(result.is_err());
+    }
+
+    #[tokio::test]
+    async fn simple_authorizer_request_context_too_large() {
+        let authorizer = Authorizer::new(
+            AuthorizerConfigBuilder::default()
+                .policy_set_provider(Arc::new(MockPolicySetProvider))
+                .entity_provider(Arc::new(MockEntityProvider))
+                .build()
+                .unwrap(),
+        );
+        let json = File::open("tests/data/context_too_large.json").unwrap();
+        let context = Context::from_json_file(&json, None).unwrap();
+
+        let request = Request::new(
+            Some(r#"User::"Mike""#.parse().unwrap()),
+            Some(r#"Action::"View""#.parse().unwrap()),
+            Some(r#"Box::"10""#.parse().unwrap()),
+            context,
+        );
+        let entities = Entities::empty();
+        let result = authorizer.is_authorized(&request, &entities).await;
 
         assert!(result.is_err());
     }
