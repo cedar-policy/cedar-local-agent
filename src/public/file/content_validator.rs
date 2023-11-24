@@ -8,11 +8,14 @@ use std::io::{BufReader, Read};
 use std::path::Path;
 use thiserror::Error;
 
+/// Maximum file size, default to 100 MB
+const DEFAULT_FILE_SIZE_LIMIT: u64 = 100_000_000;
+
 /// The `BufferReaderError` occurs when the file operation failed or not in the valid format.
 #[derive(Error, Debug)]
 pub enum BufferReaderError {
     /// Indicates that the file size exceeds the allowed limit default = 100MB.
-    #[error("The input file is too large size limit = {0}")]
+    #[error("The input file is too large size limit = {0} bytes")]
     FileTooLarge(String),
 
     /// Indicates that the file contains non-ASCII characters.
@@ -22,6 +25,13 @@ pub enum BufferReaderError {
     /// Represents an I/O error that occurred during file processing.
     #[error("IO Error, reason = {0}")]
     IoError(#[from] io::Error),
+
+    /// File size exceeds the maximum supported limit
+    #[error(
+        "File size exceeds the maximum supported limit: (expected < {} bytes)",
+        u64::MAX
+    )]
+    FileSizeOverflow,
 }
 
 /// Represents a unit of data size, such as bytes, kilobytes, megabytes, or gigabytes.
@@ -40,14 +50,26 @@ pub enum ByteUnit {
 }
 
 /// Helper function to convert `ByteUnit` to u64
-impl From<&ByteUnit> for u64 {
-    fn from(value: &ByteUnit) -> Self {
+impl TryFrom<ByteUnit> for u64 {
+    type Error = BufferReaderError;
+
+    fn try_from(value: ByteUnit) -> Result<Self, Self::Error> {
+        let scale_factor = match value {
+            ByteUnit::Byte(_) => 1,
+            ByteUnit::Kilobyte(_) => 1_000,
+            ByteUnit::Megabyte(_) => 1_000_000,
+            ByteUnit::Gigabyte(_) => 1_000_000_000,
+            ByteUnit::Terabyte(_) => 1_000_000_000_000,
+        };
+
         match value {
-            ByteUnit::Byte(bytes) => *bytes,
-            ByteUnit::Kilobyte(bytes) => bytes * 1000,
-            ByteUnit::Megabyte(bytes) => bytes * 1_000_000,
-            ByteUnit::Gigabyte(bytes) => bytes * 1_000_000_000,
-            ByteUnit::Terabyte(bytes) => bytes * 1_000_000_000_000,
+            ByteUnit::Byte(bytes)
+            | ByteUnit::Kilobyte(bytes)
+            | ByteUnit::Megabyte(bytes)
+            | ByteUnit::Gigabyte(bytes)
+            | ByteUnit::Terabyte(bytes) => bytes
+                .checked_mul(scale_factor)
+                .ok_or_else(|| BufferReaderError::FileSizeOverflow),
         }
     }
 }
@@ -82,7 +104,7 @@ where
     P: AsRef<Path>,
 {
     /// Maximum file size allowed
-    pub max_file_size: ByteUnit,
+    pub max_file_size: u64,
     /// File path accepts any type that could convert a value into a reference to a Path such as,
     /// `String`, `&str`, `Path`, and `PathBuf`.
     pub path: P,
@@ -98,20 +120,21 @@ where
         P: AsRef<Path>,
     {
         Self {
-            max_file_size: ByteUnit::Megabyte(100),
+            max_file_size: DEFAULT_FILE_SIZE_LIMIT,
             path,
         }
     }
 
-    /// `FileConfig` constructor takes file path and maximum file size.
-    pub fn file_with_size_limit(path: P, max_file_size: ByteUnit) -> Self
-    where
-        P: AsRef<Path>,
-    {
-        Self {
-            max_file_size,
-            path,
-        }
+    /// Update the `max_file_size` with the given new value
+    /// # Errors
+    ///
+    /// This function can error if the file size is overflow
+    pub fn with_size(self, file_size: ByteUnit) -> Result<Self, BufferReaderError> {
+        let max_size = file_size.try_into()?;
+        Ok(Self {
+            max_file_size: max_size,
+            ..self
+        })
     }
 
     /// Helper function to validate the file size
@@ -121,7 +144,7 @@ where
     /// This function can error if the file size is too large
     pub fn validation_file_size(&self) -> Result<(), BufferReaderError> {
         let file_size = std::fs::metadata(&self.path)?.len();
-        if file_size > u64::from(&self.max_file_size) {
+        if file_size > self.max_file_size {
             return Err(BufferReaderError::FileTooLarge(
                 self.max_file_size.to_string(),
             ));
@@ -174,9 +197,11 @@ impl BufferReader {
 #[cfg(test)]
 mod tests {
     use crate::public::file::content_validator::BufferReaderError::{
-        FileTooLarge, NonAsciiEncoded,
+        FileSizeOverflow, FileTooLarge, NonAsciiEncoded,
     };
-    use crate::public::file::content_validator::{BufferReader, ByteUnit, FileConfig};
+    use crate::public::file::content_validator::{
+        BufferReader, ByteUnit, FileConfig, DEFAULT_FILE_SIZE_LIMIT,
+    };
     use std::fs;
     use std::io::{BufRead, Write};
     use tempfile::NamedTempFile;
@@ -199,10 +224,9 @@ mod tests {
 
     #[test]
     fn file_open_is_too_large() {
-        let f = FileConfig::file_with_size_limit(
-            "tests/data/too_many_entities.json",
-            ByteUnit::Kilobyte(1),
-        );
+        let f = FileConfig::file("tests/data/too_many_entities.json")
+            .with_size(ByteUnit::Kilobyte(1))
+            .unwrap();
         let reader = BufferReader::open(&f);
         assert!(reader.is_err());
         assert!(matches!(reader.unwrap_err(), FileTooLarge(_)));
@@ -236,24 +260,45 @@ mod tests {
     #[test]
     #[allow(clippy::similar_names)]
     fn byte_unit_conversion_display_is_ok() {
-        let ten_b = u64::from(&ByteUnit::Byte(10));
+        let ten_b = u64::try_from(ByteUnit::Byte(10)).unwrap();
         assert_eq!(ten_b, 10);
         assert_eq!(ByteUnit::Byte(10).to_string(), "10 B");
 
-        let ten_kb = u64::from(&ByteUnit::Kilobyte(10));
+        let ten_kb = u64::try_from(ByteUnit::Kilobyte(10)).unwrap();
         assert_eq!(ten_kb, 10000);
         assert_eq!(ByteUnit::Kilobyte(10).to_string(), "10 KB");
 
-        let ten_mb = u64::from(&ByteUnit::Megabyte(10));
+        let ten_mb = u64::try_from(ByteUnit::Megabyte(10)).unwrap();
         assert_eq!(ten_mb, 10_000_000);
         assert_eq!(ByteUnit::Megabyte(10).to_string(), "10 MB");
 
-        let ten_gb = u64::from(&ByteUnit::Gigabyte(10));
+        let ten_gb = u64::try_from(ByteUnit::Gigabyte(10)).unwrap();
         assert_eq!(ten_gb, 10_000_000_000);
         assert_eq!(ByteUnit::Gigabyte(10).to_string(), "10 GB");
 
-        let ten_tb = u64::from(&ByteUnit::Terabyte(10));
+        let ten_tb = u64::try_from(ByteUnit::Terabyte(10)).unwrap();
         assert_eq!(ten_tb, 10_000_000_000_000);
         assert_eq!(ByteUnit::Terabyte(10).to_string(), "10 TB");
+    }
+
+    #[test]
+    fn construct_file_with_valid_file_limit() {
+        let f = FileConfig::file("tests/data/sweets.cedar")
+            .with_size(ByteUnit::Gigabyte(1))
+            .unwrap();
+        assert_eq!(f.max_file_size, 1_000_000_000);
+        assert_eq!(f.path, "tests/data/sweets.cedar");
+
+        let default_file_constructor = FileConfig::file("tests/data/sweets.cedar");
+        assert_eq!(
+            default_file_constructor.max_file_size,
+            DEFAULT_FILE_SIZE_LIMIT
+        );
+    }
+
+    #[test]
+    fn construct_file_with_size_overflow() {
+        let f = FileConfig::file("tests/data/sweets.cedar").with_size(ByteUnit::Gigabyte(u64::MAX));
+        assert!(matches!(f.unwrap_err(), FileSizeOverflow));
     }
 }
