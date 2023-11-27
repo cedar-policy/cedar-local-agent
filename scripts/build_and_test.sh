@@ -54,7 +54,7 @@ grcov 'target/private/profraw/' \
   --excl-start '\#\[cfg\(test\)\]' \
   --excl-stop '// GRCOV_BEGIN_COVERAGE' \
   --excl-line '\#\[derive\(' && \
-echo "Successfully generated coverage report under target/coverage/"
+echo "Successfully generated coverage report under target/coverage/" && \
 
-END_TIME=$(date +%s)
+END_TIME=$(date +%s) && \
 echo "Build Successful in $(($END_TIME - $START_TIME)) seconds"
