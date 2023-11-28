@@ -1,6 +1,7 @@
 #!/bin/sh
 
 cd "$(dirname "$0")/.." || exit
+START_TIME=$(date +%s)
 
 rustup update stable && rustup default stable && \
 
@@ -18,8 +19,6 @@ RUSTFLAGS="-D warnings" cargo clippy --all-features --tests && \
 
 echo ">>>> cargo test --verbose" && \
 cargo test --verbose && \
-
-# cargo test --verbose --features integration-tests && \
 
 echo ">>>> cargo test --verbose --no-default-features" && \
 cargo test --verbose --no-default-features && \
@@ -55,7 +54,7 @@ grcov 'target/private/profraw/' \
   --excl-start '\#\[cfg\(test\)\]' \
   --excl-stop '// GRCOV_BEGIN_COVERAGE' \
   --excl-line '\#\[derive\(' && \
-
 echo "Successfully generated coverage report under target/coverage/" && \
 
-echo "Build Successful"
+END_TIME=$(date +%s) && \
+echo "Build Successful in $(($END_TIME - $START_TIME)) seconds"
