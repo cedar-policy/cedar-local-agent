@@ -1,0 +1,36 @@
+name: Cargo Semantic version check
+on:
+  workflow_call: # when invoked by any workflow
+  workflow_dispatch: # can be invoked manually
+
+jobs:
+  cargo_semver_checks:
+    name: Cargo Semantic version check
+    runs-on: ubuntu-latest
+    # For the non-release PR, the job will not stop on errors.
+    continue-on-error: ${{ !startsWith(github.base_ref, 'release/') }}
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+    steps:
+      - name: Check out head (${{ github.head_ref }})
+        uses: actions/checkout@v4
+        with:
+          path: head
+      # Pull requests to non-release branches are checked for SemVer breakage
+      # relative to their target branch.
+      - if: ${{ !startsWith(github.base_ref, 'release/') }}
+        name: Check out base (${{ github.base_ref }})
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      # TODO: Need to add another step for release PR.
+      # For the release PR, it will need to compare with the latest version published in the crate.io.
+
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - run: cargo install cargo-semver-checks
+      - run: cargo semver-checks check-release --package cedar-local-agent --baseline-root ../base
+        working-directory: head

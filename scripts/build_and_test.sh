@@ -56,7 +56,7 @@ grcov 'target/private/profraw/' \
   --excl-line '\#\[derive\(' && \
 echo "Successfully generated coverage report under target/coverage/" && \
 
-echo ">>>> Performing semver violations" && \
+echo ">>>> Performing semver violations check" && \
 git fetch origin && \
 latest_commit_hash=$(git rev-parse origin/main) && \
 if [ -n "$latest_commit_hash" ]; then
