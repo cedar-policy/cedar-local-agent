@@ -10,3 +10,34 @@ env:
 jobs:
   build_and_test:
     uses: ./.github/workflows/build_and_test.yml
+
+  cargo_semver_checks:
+    name: Cargo SemVer Checks
+    runs-on: ubuntu-latest
+    # For the non-release PR, the SemVer check will not stop on errors
+    continue-on-error: ${{ !startsWith(github.base_ref, 'release/') }}
+    strategy:
+      matrix:
+        toolchain:
+          - stable
+    steps:
+      - name: Check out head (${{ github.head_ref }})
+        uses: actions/checkout@v3
+        with:
+          path: head
+      # Pull requests to non-release branches are checked for SemVer breakage
+      # relative to their target branch.
+      - if: ${{ !startsWith(github.base_ref, 'release/') }}
+        name: Check out base (${{ github.base_ref }})
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.base_ref }}
+          path: base
+
+      # `cargo semver-checks` doesn't understand `rlib` crates.
+      - run: >-
+          sed -i 's/^crate_type = \["rlib"\]$/crate_type = ["lib"]/' {head,base}/cedar-policy/Cargo.toml
+      - run: rustup update ${{ matrix.toolchain }} && rustup default ${{ matrix.toolchain }}
+      - run: cargo install cargo-semver-checks
+      - run: cargo semver-checks check-release --package cedar-policy --baseline-root ../base
+        working-directory: head

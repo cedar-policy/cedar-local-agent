@@ -56,5 +56,15 @@ grcov 'target/private/profraw/' \
   --excl-line '\#\[derive\(' && \
 echo "Successfully generated coverage report under target/coverage/" && \
 
+echo ">>>> Performing semver violations" && \
+git fetch origin && \
+latest_commit_hash=$(git rev-parse origin/main) && \
+if [ -n "$latest_commit_hash" ]; then
+  cargo semver-checks --baseline-rev "$latest_commit_hash"
+else
+    echo "[ERROR] Failed to retrieve the latest commit hash for 'main' branch."
+    exit
+fi
+
 END_TIME=$(date +%s) && \
 echo "Build Successful in $(($END_TIME - $START_TIME)) seconds"
