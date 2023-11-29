@@ -10,3 +10,7 @@ env:
 jobs:
   build_and_test:
     uses: ./.github/workflows/build_and_test.yml
+
+  cargo_semver_checks:
+    uses: ./.github/workflows/semantic_version_check.yml
+
