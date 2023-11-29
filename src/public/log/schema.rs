@@ -45,7 +45,7 @@ pub struct OpenCyberSecurityFramework {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub activity_name: Option<String>,
     /// The activity id enum
-    // pub activity_id: ActivityId,
+    pub activity_id: ActivityId,
     /// The event category name, as defined by `category_uid` value: Identity & Access Management
     #[builder(default = "Some(\"Identity & Access Management\".to_string())")]
     #[serde(skip_serializing_if = "Option::is_none")]
