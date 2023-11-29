@@ -1,3 +1,6 @@
+[lib]
+bench = false
+
 [package]
 name = "cedar-local-agent"
 edition = "2021"
@@ -35,3 +38,13 @@ cedar-policy-validator = "2.4.2"
 
 [dev-dependencies]
 tempfile = "3.8.0"
+criterion = { version = "0.5.1", features = ["html_reports", "async_tokio"] }
+
+[[bin]]
+name = "data_gen"
+path = "benches/data_gen/data_gen.rs"
+bench = false
+
+[[bench]]
+name = "is_authorized"
+harness = false
