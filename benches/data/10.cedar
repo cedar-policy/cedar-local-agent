@@ -1,67 +1,61 @@
 forbid(
-  principal == Principal::"ayqdgleuhvtt",
-  action == Action::"rneblnnruvtc",
-  resource == Resource::"ivvddpawazuj"
+  principal,
+  action,
+  resource == Resource::"heztdwpmufsm"
 ) when {
   true
 };forbid(
-  principal == Principal::"ckvyubdxskly",
-  action == Action::"bxbzobaeygkp",
-  resource == Resource::"caxjyfnencux"
+  principal == Principal::"vdmoqnubphoz",
+  action,
+  resource == Resource::"hhxsdpyivfhm"
+) when {
+  true
+};forbid(
+  principal == Principal::"syzxbcwzqvcw",
+  action == Action::"ibdmikowfplh",
+  resource
+) when {
+  true
+};forbid(
+  principal,
+  action == Action::"awnljuztvpam",
+  resource == Resource::"heztdwpmufsm"
+) when {
+  true
+};forbid(
+  principal,
+  action == Action::"smczxdsimeck",
+  resource == Resource::"blijilenxjen"
+) when {
+  true
+};permit(
+  principal,
+  action,
+  resource == Resource::"fvvopcjccbyk"
+) when {
+  true
+};forbid(
+  principal,
+  action == Action::"sjhweuifdqve",
+  resource == Resource::"fymqejvihnck"
+) when {
+  true
+};forbid(
+  principal == Principal::"huxvaiyucofb",
+  action,
+  resource == Resource::"blijilenxjen"
+) when {
+  true
+};permit(
+  principal == Principal::"gcjsbxixrzfs",
+  action,
+  resource
 ) when {
   true
 };permit(
   principal == Principal::"request",
   action == Action::"request",
   resource == Resource::"request"
-) when {
-  true
-};permit(
-  principal,
-  action,
-  resource == Resource::"tqwdsjtdugpg"
-) when {
-  true
-};permit(
-  principal == Principal::"kshzkhwnxyxs",
-  action,
-  resource == Resource::"vfuamwydnwos"
-) when {
-  true
-};forbid(
-  principal == Principal::"ctihrnkxhrfl",
-  action == Action::"nxrbaqhwpgpr",
-  resource
-) when {
-  true
-};forbid(
-  principal,
-  action == Action::"ehcookxorxts",
-  resource
-) when {
-  true
-};forbid(
-  principal == Principal::"hrpbcbfgebmj",
-  action == Action::"jdwalquhbcie",
-  resource == Resource::"aoxfeevldalu"
-) when {
-  true
-};permit(
-  principal,
-  action == Action::"hslrlakifeyg",
-  resource == Resource::"mwdjpyjiovyo"
-) when {
-  true
-};forbid(
-  principal == Principal::"fsjnovzjqscm",
-  action,
-  resource
-) when {
-  true
-};permit(
-  principal,
-  action,
-  resource == Resource::"dgxxhqtepxrh"
 ) when {
   true
 };
