@@ -337,6 +337,7 @@ the `cedar-local-agent` is capable of enforcing are met. This includes:
 1. Filesystem permissions for on-disk Policy Stores should be limited to least-privilege, see [Limiting Access to Local Data Files](#limiting-access-to-local-data-files).
 2. Filesystem permissions for on-disk locations of OCSF logs follow least-privilege permissions, see [OCSF Log directory permissions](#ocsf-log-directory-permissions).
 3. The `cedar-local-agent` is configured securely, see [Quick Start](#quick-start) and [Updating `file::PolicySetProvider` or `file::EntityProvider` data](#updating-filepolicysetprovider-or-fileentityprovider-data) for configuration best practices.
+4. Validating the size of files read and requests made to `is_authorized` to prevent potential denial of service.
 
 ### Limiting Access to Local Data Files
 
