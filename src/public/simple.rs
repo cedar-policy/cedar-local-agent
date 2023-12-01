@@ -1,7 +1,7 @@
 //! Provides a simple authorizer that takes a `SimplePolicySetProvider` and a `SimpleEntityProvider`.
 use std::sync::Arc;
 
-use cedar_policy::{Entities, Entity, Request, Response};
+use cedar_policy::{Entities, Request, Response};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::join;
@@ -10,8 +10,7 @@ use tracing_core::Level;
 use uuid::Uuid;
 
 use crate::public::log::schema::OpenCyberSecurityFramework;
-use crate::public::log::ConfigBuilderError::ValidationError;
-use crate::public::{log, EntityProviderError, SimpleEntityProvider, MAX_ENTITIES_COUNT};
+use crate::public::{log, EntityProviderError, SimpleEntityProvider};
 use crate::public::{PolicySetProviderError, SimplePolicySetProvider};
 
 /// The `AuthorizerConfig` provides customers the ability to build their own
@@ -137,7 +136,6 @@ where
                 .cloned(),
         )
         .map_err(|e| AuthorizerError::General(Box::new(e)))?;
-        validate_request(&merged_entities)?;
 
         let response = cedar_policy::Authorizer::new().is_authorized(
             request,
@@ -180,20 +178,9 @@ where
     }
 }
 
-fn validate_request(entities: &Entities) -> Result<(), AuthorizerError> {
-    let num_entities = entities.iter().map(Entity::uid).count();
-    if num_entities > MAX_ENTITIES_COUNT {
-        return Err(AuthorizerError::General(Box::new(ValidationError(
-            format!("Number of entities exceeded max of {MAX_ENTITIES_COUNT}"),
-        ))));
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod test {
     use std::fmt::Error;
-    use std::fs::File;
     use std::sync::Arc;
 
     use async_trait::async_trait;
@@ -255,33 +242,6 @@ mod test {
         assert_eq!(result.unwrap().decision(), Decision::Deny);
         assert_eq!(authorizer.log_config.requester, DEFAULT_REQUESTER_NAME);
         assert!(!authorizer.log_config.field_set.principal);
-    }
-
-    #[tokio::test]
-    async fn simple_authorizer_too_many_entities() {
-        let authorizer: Authorizer<MockPolicySetProvider, MockEntityProvider> = Authorizer::new(
-            AuthorizerConfigBuilder::default()
-                .policy_set_provider(Arc::new(MockPolicySetProvider))
-                .entity_provider(Arc::new(MockEntityProvider))
-                .build()
-                .unwrap(),
-        );
-        let entities_file = File::open("tests/data/too_many_entities.json").unwrap();
-
-        let test_entities = Entities::from_json_file(entities_file, Option::None).unwrap();
-        let result = authorizer
-            .is_authorized(
-                &Request::new(
-                    Some(r#"User::"Mike""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"10""#.parse().unwrap()),
-                    Context::empty(),
-                ),
-                &test_entities,
-            )
-            .await;
-
-        assert!(result.is_err());
     }
 
     #[derive(Debug, Default)]
