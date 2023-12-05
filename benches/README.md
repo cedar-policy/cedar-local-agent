@@ -11,7 +11,6 @@ cargo run --bin data_gen -- <file_name> <num_policies>
 This supports producing a `.cedar` and a `.entities.json` file. You can see all the supported variations of a cedar policy in `data_gen/policy.rs`. 
 Every permutation that can be made to the `PolicyRepr` struct and all the structs underneath it is supported. 
 
-As of 11/29/23, there's no support for `when` or `unless` clauses being generated, and there's no support for the `in` operator. 
 The `type_name` and `id` Strings are limited to `FIELD_LEN` characters which is set to `12` and the character set is lowercase letters.
 The data generator creates separate entities for the principal, action, and resources. Parent/child entities are not supported. 
 
