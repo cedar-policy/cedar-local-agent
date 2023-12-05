@@ -28,10 +28,10 @@ tracing-core = "0.1.31"
 tracing-subscriber = "0.3.17"
 
 # Cedar
-cedar-policy = "2.3.0"
-cedar-policy-core = "2.3.0"
-cedar-policy-formatter = "2.3.0"
-cedar-policy-validator = "2.3.0"
+cedar-policy = "2.4.2"
+cedar-policy-core = "2.4.2"
+cedar-policy-formatter = "2.4.2"
+cedar-policy-validator = "2.4.2"
 
 [dev-dependencies]
 tempfile = "3.8.0"

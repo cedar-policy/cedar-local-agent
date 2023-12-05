@@ -19,6 +19,15 @@ skip = [
     { name = "darling_core", version = "=0.14.4" }, # old dependency from derive_builder
     { name = "bitflags", version = "=1.3.2" }, # old transitive dependency from cedar_policy_core
     { name = "regex-syntax", version = "<=0.7.5" }, # old transitive dependency from cedar_policy_core
+    { name = "windows_aarch64_gnullvm", version = "=0.48.5" }, # old dependency from chrono,lalrpop
+    { name = "windows_aarch64_msvc", version = "=0.48.5" }, # old dependency from chrono,lalrpop
+    { name = "windows_i686_msvc", version = "=0.48.5" }, # old dependency from chrono,lalrpop
+    { name = "windows_i686_gnu", version = "=0.48.5" }, # old dependency from chrono,lalrpop
+    { name = "windows-sys", version = "=0.48.0" }, # old dependency from chrono,lalrpop
+    { name = "windows-targets", version = "=0.48.5" }, # old dependency from chrono,lalrpop
+    { name = "windows_x86_64_gnu", version = "=0.48.5" }, # old dependency from chrono,lalrpop
+    { name = "windows_x86_64_gnullvm", version = "=0.48.5" }, # old dependency from chrono,lalrpop
+    { name = "windows_x86_64_msvc", version = "=0.48.5" }, # old dependency from chrono,lalrpop
 ]
 skip-tree = []
 
