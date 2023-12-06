@@ -29,3 +29,10 @@ permit (
     action == Action::"update",
     resource == Box::"10"
 );
+
+@id("boxmanagers-edit-box")
+permit (
+    principal in Role::"boxManagers",
+    action == Action::"update",
+    resource in Group::"boxGroup"
+);

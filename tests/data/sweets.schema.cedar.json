@@ -2,7 +2,9 @@
   "": {
     "entityTypes": {
       "User": {
-        "memberOfTypes": []
+        "memberOfTypes": [
+          "Role"
+        ]
       },
       "Box": {
         "shape": {
@@ -14,7 +16,21 @@
             }
           }
         },
-        "memberOfTypes": []
+        "memberOfTypes": [
+          "Group"
+        ]
+      },
+      "Role": {
+        "shape": {
+          "type": "Record",
+          "attributes": {}
+        }
+      },
+      "Group": {
+        "shape": {
+          "type": "Record",
+          "attributes": {}
+        }
       }
     },
     "actions": {

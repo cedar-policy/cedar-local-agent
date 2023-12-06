@@ -7,7 +7,12 @@
   {
     "uid": { "__entity": { "type": "User", "id": "Mike"} },
     "attrs": {},
-    "parents": []
+    "parents": [
+      {
+        "type": "Role",
+        "id": "boxManagers"
+      }
+    ]
   },
   {
     "uid": { "__entity": { "type": "Box", "id": "1"} },
@@ -97,6 +102,30 @@
         "__entity": { "type": "User", "id": "Mike"}
       }
     },
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "11"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Eric"}
+      }
+    },
+    "parents": [
+      {
+        "type": "Group",
+        "id": "boxGroup"
+      }
+    ]
+  },
+  {
+    "uid": { "__entity": { "type": "Role", "id": "boxManagers"} },
+    "attrs": {},
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Group", "id": "boxGroup"} },
+    "attrs": {},
     "parents": []
   }
 ]

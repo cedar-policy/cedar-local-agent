@@ -103,6 +103,7 @@ mod test {
             (build_request("Mike", "read", 8), Decision::Allow),
             (build_request("Mike", "read", 9), Decision::Allow),
             (build_request("Mike", "read", 10), Decision::Allow),
+            (build_request("Mike", "read", 11), Decision::Deny),
             (build_request("Mike", "update", 1), Decision::Allow),
             (build_request("Mike", "update", 2), Decision::Deny),
             (build_request("Mike", "update", 3), Decision::Deny),
@@ -113,6 +114,7 @@ mod test {
             (build_request("Mike", "update", 8), Decision::Allow),
             (build_request("Mike", "update", 9), Decision::Allow),
             (build_request("Mike", "update", 10), Decision::Allow),
+            (build_request("Mike", "update", 11), Decision::Allow),
             (build_request("Mike", "delete", 1), Decision::Deny),
             (build_request("Mike", "delete", 2), Decision::Deny),
             (build_request("Mike", "delete", 3), Decision::Deny),
@@ -123,6 +125,7 @@ mod test {
             (build_request("Mike", "delete", 8), Decision::Allow),
             (build_request("Mike", "delete", 9), Decision::Allow),
             (build_request("Mike", "delete", 10), Decision::Allow),
+            (build_request("Mike", "delete", 11), Decision::Deny),
             (build_request("Eric", "read", 1), Decision::Allow),
             (build_request("Eric", "read", 2), Decision::Allow),
             (build_request("Eric", "read", 3), Decision::Allow),
@@ -132,6 +135,7 @@ mod test {
             (build_request("Eric", "read", 8), Decision::Deny),
             (build_request("Eric", "read", 9), Decision::Allow),
             (build_request("Eric", "read", 10), Decision::Deny),
+            (build_request("Eric", "read", 11), Decision::Allow),
             (build_request("Eric", "update", 1), Decision::Allow),
             (build_request("Eric", "update", 2), Decision::Allow),
             (build_request("Eric", "update", 3), Decision::Allow),
@@ -142,6 +146,7 @@ mod test {
             (build_request("Eric", "update", 8), Decision::Deny),
             (build_request("Eric", "update", 9), Decision::Deny),
             (build_request("Eric", "update", 10), Decision::Allow),
+            (build_request("Eric", "update", 11), Decision::Allow),
             (build_request("Eric", "delete", 1), Decision::Allow),
             (build_request("Eric", "delete", 2), Decision::Allow),
             (build_request("Eric", "delete", 3), Decision::Allow),
@@ -152,6 +157,7 @@ mod test {
             (build_request("Eric", "delete", 8), Decision::Deny),
             (build_request("Eric", "delete", 9), Decision::Deny),
             (build_request("Eric", "delete", 10), Decision::Deny),
+            (build_request("Eric", "delete", 11), Decision::Allow),
         ])
     }
 
