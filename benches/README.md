@@ -43,6 +43,13 @@ This benchmark can be run with:
 cargo bench -- is_authorized --verbose
 ```
 
+For a controlled test use:
+```
+numactl --physcpubind=4-7 cargo bench -- is_authorized --verbose
+```
+
+This assumes you have an 8 core Linux machine. Configure numactl as needed for your device.
+
 The `is_authorized` benchmark uses the data in the `data/` folder with the request shown above. 
 The benchmark will look for two files: `<num_policies>.cedar` and `<num_policies>.entities.json`.
 `<num_policies>` is defined by `NUM_POLICIES_ARR` so that all the `is_authorized` benchmarks can be run at once and compared on the generated plots.
