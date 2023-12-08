@@ -30,9 +30,16 @@ permit (
     resource == Box::"10"
 );
 
-@id("boxmanagers-edit-box")
+@id("manager-view-edit-giftset")
 permit (
-    principal in Role::"boxManagers",
-    action == Action::"update",
-    resource in Group::"boxGroup"
+    principal in BoxRole::"manager",
+    action in [Action::"read", Action::"update"],
+    resource in BoxGroup::"giftSet"
+);
+
+@id("sales-view-edit-christmasGiftSet")
+permit (
+    principal in BoxRole::"sales",
+    action in [Action::"read", Action::"update"],
+    resource in BoxGroup::"christmasGiftSet"
 );

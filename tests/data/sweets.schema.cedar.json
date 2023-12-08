@@ -3,7 +3,7 @@
     "entityTypes": {
       "User": {
         "memberOfTypes": [
-          "Role"
+          "BoxRole"
         ]
       },
       "Box": {
@@ -17,20 +17,23 @@
           }
         },
         "memberOfTypes": [
-          "Group"
+          "BoxGroup"
         ]
       },
-      "Role": {
+      "BoxRole": {
         "shape": {
           "type": "Record",
           "attributes": {}
         }
       },
-      "Group": {
+      "BoxGroup": {
         "shape": {
           "type": "Record",
           "attributes": {}
-        }
+        },
+        "memberOfTypes": [
+          "BoxGroup"
+        ]
       }
     },
     "actions": {

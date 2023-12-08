@@ -103,7 +103,6 @@ mod test {
             (build_request("Mike", "read", 8), Decision::Allow),
             (build_request("Mike", "read", 9), Decision::Allow),
             (build_request("Mike", "read", 10), Decision::Allow),
-            (build_request("Mike", "read", 11), Decision::Deny),
             (build_request("Mike", "update", 1), Decision::Allow),
             (build_request("Mike", "update", 2), Decision::Deny),
             (build_request("Mike", "update", 3), Decision::Deny),
@@ -114,7 +113,6 @@ mod test {
             (build_request("Mike", "update", 8), Decision::Allow),
             (build_request("Mike", "update", 9), Decision::Allow),
             (build_request("Mike", "update", 10), Decision::Allow),
-            (build_request("Mike", "update", 11), Decision::Allow),
             (build_request("Mike", "delete", 1), Decision::Deny),
             (build_request("Mike", "delete", 2), Decision::Deny),
             (build_request("Mike", "delete", 3), Decision::Deny),
@@ -125,7 +123,6 @@ mod test {
             (build_request("Mike", "delete", 8), Decision::Allow),
             (build_request("Mike", "delete", 9), Decision::Allow),
             (build_request("Mike", "delete", 10), Decision::Allow),
-            (build_request("Mike", "delete", 11), Decision::Deny),
             (build_request("Eric", "read", 1), Decision::Allow),
             (build_request("Eric", "read", 2), Decision::Allow),
             (build_request("Eric", "read", 3), Decision::Allow),
@@ -135,7 +132,6 @@ mod test {
             (build_request("Eric", "read", 8), Decision::Deny),
             (build_request("Eric", "read", 9), Decision::Allow),
             (build_request("Eric", "read", 10), Decision::Deny),
-            (build_request("Eric", "read", 11), Decision::Allow),
             (build_request("Eric", "update", 1), Decision::Allow),
             (build_request("Eric", "update", 2), Decision::Allow),
             (build_request("Eric", "update", 3), Decision::Allow),
@@ -146,7 +142,6 @@ mod test {
             (build_request("Eric", "update", 8), Decision::Deny),
             (build_request("Eric", "update", 9), Decision::Deny),
             (build_request("Eric", "update", 10), Decision::Allow),
-            (build_request("Eric", "update", 11), Decision::Allow),
             (build_request("Eric", "delete", 1), Decision::Allow),
             (build_request("Eric", "delete", 2), Decision::Allow),
             (build_request("Eric", "delete", 3), Decision::Allow),
@@ -157,7 +152,6 @@ mod test {
             (build_request("Eric", "delete", 8), Decision::Deny),
             (build_request("Eric", "delete", 9), Decision::Deny),
             (build_request("Eric", "delete", 10), Decision::Deny),
-            (build_request("Eric", "delete", 11), Decision::Allow),
         ])
     }
 
@@ -223,6 +217,153 @@ mod test {
             (build_request("Eric", "delete", 9), Decision::Allow),
             (build_request("Eric", "delete", 10), Decision::Allow),
         ])
+    }
+
+    fn requests_with_group() -> Vec<(Request, Decision)> {
+        Vec::from([
+            (build_request("Mike", "read", 1), Decision::Deny),
+            (build_request("Mike", "read", 2), Decision::Allow),
+            (build_request("Mike", "read", 3), Decision::Deny),
+            (build_request("Mike", "read", 4), Decision::Deny),
+            (build_request("Mike", "read", 5), Decision::Deny),
+            (build_request("Mike", "read", 6), Decision::Allow),
+            (build_request("Mike", "read", 7), Decision::Allow),
+            (build_request("Mike", "read", 8), Decision::Allow),
+            (build_request("Mike", "read", 9), Decision::Allow),
+            (build_request("Mike", "read", 10), Decision::Allow),
+            (build_request("Mike", "read", 11), Decision::Allow),
+            (build_request("Mike", "read", 12), Decision::Allow),
+            (build_request("Mike", "update", 1), Decision::Allow),
+            (build_request("Mike", "update", 2), Decision::Deny),
+            (build_request("Mike", "update", 3), Decision::Deny),
+            (build_request("Mike", "update", 4), Decision::Deny),
+            (build_request("Mike", "update", 5), Decision::Deny),
+            (build_request("Mike", "update", 6), Decision::Allow),
+            (build_request("Mike", "update", 7), Decision::Allow),
+            (build_request("Mike", "update", 8), Decision::Allow),
+            (build_request("Mike", "update", 9), Decision::Allow),
+            (build_request("Mike", "update", 10), Decision::Allow),
+            (build_request("Mike", "update", 11), Decision::Allow),
+            (build_request("Mike", "update", 12), Decision::Allow),
+            (build_request("Mike", "delete", 1), Decision::Deny),
+            (build_request("Mike", "delete", 2), Decision::Deny),
+            (build_request("Mike", "delete", 3), Decision::Deny),
+            (build_request("Mike", "delete", 4), Decision::Deny),
+            (build_request("Mike", "delete", 5), Decision::Deny),
+            (build_request("Mike", "delete", 6), Decision::Allow),
+            (build_request("Mike", "delete", 7), Decision::Allow),
+            (build_request("Mike", "delete", 8), Decision::Allow),
+            (build_request("Mike", "delete", 9), Decision::Allow),
+            (build_request("Mike", "delete", 10), Decision::Allow),
+            (build_request("Mike", "delete", 11), Decision::Allow),
+            (build_request("Mike", "delete", 12), Decision::Allow),
+            (build_request("Eric", "read", 1), Decision::Allow),
+            (build_request("Eric", "read", 2), Decision::Allow),
+            (build_request("Eric", "read", 3), Decision::Allow),
+            (build_request("Eric", "read", 4), Decision::Allow),
+            (build_request("Eric", "read", 5), Decision::Allow),
+            (build_request("Eric", "read", 6), Decision::Deny),
+            (build_request("Eric", "read", 7), Decision::Deny),
+            (build_request("Eric", "read", 8), Decision::Deny),
+            (build_request("Eric", "read", 9), Decision::Allow),
+            (build_request("Eric", "read", 10), Decision::Deny),
+            (build_request("Eric", "read", 11), Decision::Allow),
+            (build_request("Eric", "read", 12), Decision::Deny),
+            (build_request("Eric", "update", 1), Decision::Allow),
+            (build_request("Eric", "update", 2), Decision::Allow),
+            (build_request("Eric", "update", 3), Decision::Allow),
+            (build_request("Eric", "update", 4), Decision::Allow),
+            (build_request("Eric", "update", 5), Decision::Allow),
+            (build_request("Eric", "update", 6), Decision::Deny),
+            (build_request("Eric", "update", 7), Decision::Deny),
+            (build_request("Eric", "update", 8), Decision::Deny),
+            (build_request("Eric", "update", 9), Decision::Deny),
+            (build_request("Eric", "update", 10), Decision::Allow),
+            (build_request("Eric", "update", 11), Decision::Allow),
+            (build_request("Eric", "update", 12), Decision::Deny),
+            (build_request("Eric", "delete", 1), Decision::Allow),
+            (build_request("Eric", "delete", 2), Decision::Allow),
+            (build_request("Eric", "delete", 3), Decision::Allow),
+            (build_request("Eric", "delete", 4), Decision::Allow),
+            (build_request("Eric", "delete", 5), Decision::Allow),
+            (build_request("Eric", "delete", 6), Decision::Deny),
+            (build_request("Eric", "delete", 7), Decision::Deny),
+            (build_request("Eric", "delete", 8), Decision::Deny),
+            (build_request("Eric", "delete", 9), Decision::Deny),
+            (build_request("Eric", "delete", 10), Decision::Deny),
+            (build_request("Eric", "delete", 11), Decision::Deny),
+            (build_request("Eric", "delete", 12), Decision::Deny),
+            (build_request("Phil", "read", 1), Decision::Deny),
+            (build_request("Phil", "read", 2), Decision::Deny),
+            (build_request("Phil", "read", 3), Decision::Deny),
+            (build_request("Phil", "read", 4), Decision::Deny),
+            (build_request("Phil", "read", 5), Decision::Deny),
+            (build_request("Phil", "read", 6), Decision::Deny),
+            (build_request("Phil", "read", 7), Decision::Deny),
+            (build_request("Phil", "read", 8), Decision::Deny),
+            (build_request("Phil", "read", 9), Decision::Deny),
+            (build_request("Phil", "read", 10), Decision::Deny),
+            (build_request("Phil", "read", 11), Decision::Allow),
+            (build_request("Phil", "read", 12), Decision::Allow),
+            (build_request("Phil", "update", 1), Decision::Deny),
+            (build_request("Phil", "update", 2), Decision::Deny),
+            (build_request("Phil", "update", 3), Decision::Deny),
+            (build_request("Phil", "update", 4), Decision::Deny),
+            (build_request("Phil", "update", 5), Decision::Deny),
+            (build_request("Phil", "update", 6), Decision::Deny),
+            (build_request("Phil", "update", 7), Decision::Deny),
+            (build_request("Phil", "update", 8), Decision::Deny),
+            (build_request("Phil", "update", 9), Decision::Deny),
+            (build_request("Phil", "update", 10), Decision::Deny),
+            (build_request("Phil", "update", 11), Decision::Allow),
+            (build_request("Phil", "update", 12), Decision::Allow),
+            (build_request("Phil", "delete", 1), Decision::Deny),
+            (build_request("Phil", "delete", 2), Decision::Deny),
+            (build_request("Phil", "delete", 3), Decision::Deny),
+            (build_request("Phil", "delete", 4), Decision::Deny),
+            (build_request("Phil", "delete", 5), Decision::Deny),
+            (build_request("Phil", "delete", 6), Decision::Deny),
+            (build_request("Phil", "delete", 7), Decision::Deny),
+            (build_request("Phil", "delete", 8), Decision::Deny),
+            (build_request("Phil", "delete", 9), Decision::Deny),
+            (build_request("Phil", "delete", 10), Decision::Deny),
+            (build_request("Phil", "delete", 11), Decision::Deny),
+            (build_request("Phil", "delete", 12), Decision::Deny),
+        ])
+    }
+
+    #[tokio::test]
+    async fn authorize_with_group_of_entities() {
+        let policy_set_provider = Arc::new(
+            PolicySetProvider::new(
+                policy_set_provider::ConfigBuilder::default()
+                    .policy_set_path("tests/data/sweets.cedar")
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
+
+        let entity_provider = Arc::new(
+            EntityProvider::new(
+                entity_provider::ConfigBuilder::default()
+                    .entities_path("tests/data/sweets.entities.json")
+                    .schema_path("tests/data/sweets.schema.cedar.json")
+                    .build()
+                    .unwrap(),
+            )
+            .unwrap(),
+        );
+
+        let authorizer: Authorizer<PolicySetProvider, EntityProvider> = Authorizer::new(
+            AuthorizerConfigBuilder::default()
+                .entity_provider(entity_provider)
+                .policy_set_provider(policy_set_provider)
+                .build()
+                .unwrap(),
+        );
+
+        validate_requests(&authorizer, requests_with_group()).await;
     }
 
     #[tokio::test]
