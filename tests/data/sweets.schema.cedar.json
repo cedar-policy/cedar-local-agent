@@ -32,8 +32,14 @@
           "attributes": {}
         },
         "memberOfTypes": [
-          "BoxGroup"
+          "BoxCollection"
         ]
+      },
+      "BoxCollection": {
+        "shape": {
+          "type": "Record",
+          "attributes": {}
+        }
       }
     },
     "actions": {

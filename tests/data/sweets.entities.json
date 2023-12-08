@@ -25,6 +25,16 @@
     ]
   },
   {
+    "uid": { "__entity": { "type": "User", "id": "Alice"} },
+    "attrs": {},
+    "parents": [
+      {
+        "type": "BoxRole",
+        "id": "admin"
+      }
+    ]
+  },
+  {
     "uid": { "__entity": { "type": "Box", "id": "1"} },
     "attrs": {
       "owner": {
@@ -153,7 +163,12 @@
     "parents": []
   },
   {
-    "uid": { "__entity": { "type": "BoxGroup", "id": "giftSet"} },
+    "uid": { "__entity": { "type": "BoxRole", "id": "admin"} },
+    "attrs": {},
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "BoxCollection", "id": "giftSet"} },
     "attrs": {},
     "parents": []
   },
@@ -162,7 +177,7 @@
     "attrs": {},
     "parents": [
       {
-        "type": "BoxGroup",
+        "type": "BoxCollection",
         "id": "giftSet"
       }
     ]
@@ -172,7 +187,7 @@
     "attrs": {},
     "parents": [
       {
-        "type": "BoxGroup",
+        "type": "BoxCollection",
         "id": "giftSet"
       }
     ]

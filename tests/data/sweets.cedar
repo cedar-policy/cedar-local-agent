@@ -2,6 +2,13 @@
 permit(principal, action, resource)
 when { principal == resource.owner };
 
+@id("admin-role-policy")
+permit (
+    principal in BoxRole::"admin",
+    action,
+    resource
+);
+
 @id("mike-edit-box-1")
 permit (
     principal == User::"Mike",
@@ -30,14 +37,14 @@ permit (
     resource == Box::"10"
 );
 
-@id("manager-view-edit-giftset")
+@id("manager-view-edit-boxcollection-giftset")
 permit (
     principal in BoxRole::"manager",
     action in [Action::"read", Action::"update"],
-    resource in BoxGroup::"giftSet"
+    resource in BoxCollection::"giftSet"
 );
 
-@id("sales-view-edit-christmasGiftSet")
+@id("sales-view-edit-boxgroup-christmasGiftSet")
 permit (
     principal in BoxRole::"sales",
     action in [Action::"read", Action::"update"],
