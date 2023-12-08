@@ -2,12 +2,37 @@
   {
     "uid": { "__entity": { "type": "User", "id": "Eric"} },
     "attrs": {},
-    "parents": []
+    "parents": [
+      {
+        "type": "BoxRole",
+        "id": "sales"
+      }
+    ]
   },
   {
     "uid": { "__entity": { "type": "User", "id": "Mike"} },
     "attrs": {},
     "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "User", "id": "Phil"} },
+    "attrs": {},
+    "parents": [
+      {
+        "type": "BoxRole",
+        "id": "manager"
+      }
+    ]
+  },
+  {
+    "uid": { "__entity": { "type": "User", "id": "Alice"} },
+    "attrs": {},
+    "parents": [
+      {
+        "type": "BoxRole",
+        "id": "admin"
+      }
+    ]
   },
   {
     "uid": { "__entity": { "type": "Box", "id": "1"} },
@@ -98,5 +123,73 @@
       }
     },
     "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "11"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Mike"}
+      }
+    },
+    "parents": [
+      {
+        "type": "BoxGroup",
+        "id": "christmasGiftSet"
+      }
+    ]
+  },
+  {
+    "uid": { "__entity": { "type": "Box", "id": "12"} },
+    "attrs": {
+      "owner": {
+        "__entity": { "type": "User", "id": "Mike"}
+      }
+    },
+    "parents": [
+      {
+        "type": "BoxGroup",
+        "id": "newYearGiftSet"
+      }
+    ]
+  },
+  {
+    "uid": { "__entity": { "type": "BoxRole", "id": "manager"} },
+    "attrs": {},
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "BoxRole", "id": "sales"} },
+    "attrs": {},
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "BoxRole", "id": "admin"} },
+    "attrs": {},
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "BoxCollection", "id": "giftSet"} },
+    "attrs": {},
+    "parents": []
+  },
+  {
+    "uid": { "__entity": { "type": "BoxGroup", "id": "christmasGiftSet"} },
+    "attrs": {},
+    "parents": [
+      {
+        "type": "BoxCollection",
+        "id": "giftSet"
+      }
+    ]
+  },
+  {
+    "uid": { "__entity": { "type": "BoxGroup", "id": "newYearGiftSet"} },
+    "attrs": {},
+    "parents": [
+      {
+        "type": "BoxCollection",
+        "id": "giftSet"
+      }
+    ]
   }
 ]

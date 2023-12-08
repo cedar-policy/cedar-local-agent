@@ -2,7 +2,9 @@
   "": {
     "entityTypes": {
       "User": {
-        "memberOfTypes": []
+        "memberOfTypes": [
+          "BoxRole"
+        ]
       },
       "Box": {
         "shape": {
@@ -14,7 +16,30 @@
             }
           }
         },
-        "memberOfTypes": []
+        "memberOfTypes": [
+          "BoxGroup"
+        ]
+      },
+      "BoxRole": {
+        "shape": {
+          "type": "Record",
+          "attributes": {}
+        }
+      },
+      "BoxGroup": {
+        "shape": {
+          "type": "Record",
+          "attributes": {}
+        },
+        "memberOfTypes": [
+          "BoxCollection"
+        ]
+      },
+      "BoxCollection": {
+        "shape": {
+          "type": "Record",
+          "attributes": {}
+        }
       }
     },
     "actions": {
