@@ -39,6 +39,7 @@ cedar-policy-validator = "2.4.2"
 [dev-dependencies]
 tempfile = "3.8.0"
 criterion = { version = "0.5.1", features = ["html_reports", "async_tokio"] }
+pprof = { version = "0.13.0", features = ["flamegraph"] }
 
 [[bin]]
 name = "data_gen"
@@ -48,3 +49,6 @@ bench = false
 [[bench]]
 name = "is_authorized"
 harness = false
+
+[[example]]
+name = "simple"

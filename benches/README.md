@@ -63,3 +63,18 @@ The generated plots are at:
 cedar-local-agent/target/criterion/is_authorized/report/index.html
 ```
 
+## Flamegraph
+
+You can create a flamegraph of an `is_authorized` call with:
+
+```
+cargo flamegraph --example simple --root --freq 5000
+```
+
+This command must be run from the crate root. Afterwards, you can find the flamegraph at `flamegraph.svg` in the crate root. 
+There are only 100 policies in the simple directory which may not be enough to gather accurate data. 
+To generate a larger dataset, navigate to `examples/simple` and run 
+```
+cargo run --bin data_gen -- simple 1000000
+```
+to generate 1 million policies. 
