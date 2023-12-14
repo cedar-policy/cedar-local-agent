@@ -6,7 +6,7 @@ version = "0.1.0"
 publish = false
 
 [dependencies]
-cedar-local-agent = { version = "0.1.0",  path = "../../../cedar-local-agent" }
+cedar-local-agent = { version = "1.0",  path = "../../../cedar-local-agent" }
 
 # Tracing
 tracing = "0.1.37"
