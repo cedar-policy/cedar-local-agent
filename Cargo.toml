@@ -1,12 +1,14 @@
-[lib]
-bench = false
-
 [package]
 name = "cedar-local-agent"
 edition = "2021"
-version = "0.1.0"
+version = "1.0.0"
+license = "Apache-2.0"
+description = "Foundational library for creating Cedar-based asynchronous authorizers."
+keywords = ["cedar", "agent", "authorization", "policy", "security"]
+repository = "https://github.com/cedar-policy/cedar-local-agent"
 
-publish = false
+[lib]
+bench = false
 
 [dependencies]
 # Utilities
