@@ -14,6 +14,10 @@ Every permutation that can be made to the `PolicyRepr` struct and all the struct
 The `type_name` and `id` Strings are limited to `FIELD_LEN` characters which is set to `12` and the character set is lowercase letters.
 The data generator creates separate entities for the principal, action, and resources. Parent/child entities are not supported. 
 
+This data generator is simple. It creates separate policies for principals, actions, and resources meaning that an entity that's used as a principal will never be used as a resource. 
+Also, it doesn't generate parent-child entity relationships, although that can be added. It doesn't support `when` or `unless` clauses, but this can be added to the `ConditionRepr` struct. 
+Also, it doesn't support the `in` operation, but this can be added to the `Operation` struct. 
+
 Additionally, when you ask for 1000 policies to be made, the program will actually generate n-1 policies (so 999 in this case) and append the following policy:
 
 ```
