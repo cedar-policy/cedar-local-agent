@@ -405,6 +405,7 @@ mod test {
     }
 
     #[tokio::test]
+    #[should_panic]
     async fn authorize_with_conflicting_input_entities() {
         let policy_set_provider = Arc::new(
             PolicySetProvider::new(
@@ -439,6 +440,7 @@ mod test {
         let schema_file = File::open("tests/data/sweets.schema.cedar.json").unwrap();
         let schema = Schema::from_file(schema_file).unwrap();
         let entities = Entities::from_json_file(entities_file, Some(&schema)).unwrap();
+        // This panics now due to enhanced entity validation in cedar-policy 3.0.0
         validate_requests_with_entities(
             &authorizer,
             &entities,
