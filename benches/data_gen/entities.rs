@@ -15,12 +15,15 @@ fn generate_entity_uid(entity_type: EntityTypeName) -> EntityUid {
 pub fn generate_entities(num_entities: u32, entity_type: EntityTypeName) -> Entities {
     let mut entities: Vec<Entity> = Vec::new();
     for _ in 0..num_entities {
-        entities.push(Entity::new(
-            generate_entity_uid(entity_type.clone()),
-            HashMap::new(),
-            HashSet::new(),
-        ));
+        entities.push(
+            Entity::new(
+                generate_entity_uid(entity_type.clone()),
+                HashMap::new(),
+                HashSet::new(),
+            )
+            .unwrap(),
+        );
     }
 
-    Entities::from_entities(entities).unwrap()
+    Entities::from_entities(entities, None).unwrap()
 }

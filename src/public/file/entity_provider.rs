@@ -316,12 +316,16 @@ mod test {
         assert!(provider.is_ok());
         assert!(provider
             .unwrap()
-            .get_entities(&Request::new(
-                Some(r#"User::"Eric""#.parse().unwrap()),
-                Some(r#"Action::"View""#.parse().unwrap()),
-                Some(r#"Box::"10""#.parse().unwrap()),
-                Context::empty(),
-            ))
+            .get_entities(
+                &Request::new(
+                    Some(r#"User::"Eric""#.parse().unwrap()),
+                    Some(r#"Action::"View""#.parse().unwrap()),
+                    Some(r#"Box::"10""#.parse().unwrap()),
+                    Context::empty(),
+                    None,
+                )
+                .unwrap()
+            )
             .await
             .is_ok());
     }

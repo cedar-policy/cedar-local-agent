@@ -134,6 +134,7 @@ where
                 .iter()
                 .chain(entities.iter())
                 .cloned(),
+            None,
         )
         .map_err(|e| AuthorizerError::General(Box::new(e)))?;
 
@@ -233,7 +234,9 @@ mod test {
                     Some(r#"Action::"View""#.parse().unwrap()),
                     Some(r#"Box::"10""#.parse().unwrap()),
                     Context::empty(),
-                ),
+                    None,
+                )
+                .unwrap(),
                 &Entities::empty(),
             )
             .await;
@@ -272,7 +275,9 @@ mod test {
                     Some(r#"Action::"View""#.parse().unwrap()),
                     Some(r#"Box::"2""#.parse().unwrap()),
                     Context::empty(),
-                ),
+                    None,
+                )
+                .unwrap(),
                 &Entities::empty(),
             )
             .await;
@@ -311,7 +316,9 @@ mod test {
                     Some(r#"Action::"View""#.parse().unwrap()),
                     Some(r#"Box::"3""#.parse().unwrap()),
                     Context::empty(),
-                ),
+                    None,
+                )
+                .unwrap(),
                 &Entities::empty(),
             )
             .await;

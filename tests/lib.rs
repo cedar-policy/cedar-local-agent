@@ -26,7 +26,9 @@ mod test {
             Some(format!("Action::\"{action}\"").parse().unwrap()),
             Some(format!("Box::\"{resource}\"").parse().unwrap()),
             Context::empty(),
+            None,
         )
+        .unwrap()
     }
 
     fn requests_with_missing_entities() -> Vec<(Request, Decision)> {

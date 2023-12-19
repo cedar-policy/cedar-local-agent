@@ -14,7 +14,9 @@ fn construct_request() -> Request {
         Some("Action::\"request\"".parse().unwrap()),
         Some("Resource::\"request\"".parse().unwrap()),
         Context::empty(),
+        None,
     )
+    .unwrap()
 }
 
 fn construct_authorizer(num_policies: u32) -> Authorizer<PolicySetProvider, EntityProvider> {

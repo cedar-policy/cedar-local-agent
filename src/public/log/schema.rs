@@ -927,9 +927,12 @@ mod test {
     use std::str::FromStr;
 
     use cedar_policy::{
-        Context, Entities, EntityId, EntityTypeName, EntityUid, PolicyId, Request, Response,
+        AuthorizationError, Context, Entities, EntityId, EntityTypeName, EntityUid,
+        EvaluationError, PolicyId, Request, Response,
     };
+    use cedar_policy_core::ast::{Name, PolicyID};
     use cedar_policy_core::authorizer::Decision;
+    use cedar_policy_core::extensions::ExtensionFunctionLookupError;
     use serde_json::{from_str, to_string, to_value, Map};
 
     use crate::public::log::error::OcsfException;
@@ -1000,7 +1003,7 @@ mod test {
         let action = Some(generate_entity_uid("read"));
         let resource = Some(generate_entity_uid("Box"));
 
-        Request::new(principal, action, resource, Context::empty())
+        Request::new(principal, action, resource, Context::empty(), None).unwrap()
     }
 
     fn generate_entities() -> Entities {
@@ -1060,7 +1063,12 @@ mod test {
         policy_ids.insert(PolicyId::from_str("policy2").unwrap());
 
         let errors = (0..num_of_error)
-            .map(|i| ("error".to_string() + i.to_string().as_str()))
+            .map(|i| AuthorizationError::PolicyEvaluationError {
+                id: PolicyID::from_string(format!("policy{}", i)),
+                error: EvaluationError::from(ExtensionFunctionLookupError::FuncDoesNotExist {
+                    name: Name::parse_unqualified_name("foo").unwrap(),
+                }),
+            })
             .collect();
 
         Response::new(decision, policy_ids, errors)
@@ -1402,7 +1410,9 @@ mod test {
             Some(action),
             Some(resource),
             Context::empty(),
+            None,
         )
+        .unwrap()
     }
 
     fn create_mock_entities() -> Entities {
