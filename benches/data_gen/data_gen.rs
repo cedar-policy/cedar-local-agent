@@ -59,6 +59,7 @@ fn main() {
             .cloned()
             .chain(actions.iter().cloned())
             .chain(resources.iter().cloned()),
+        None,
     )
     .unwrap();
     let entities_file = File::create(format!("{}.entities.json", file_name)).unwrap();

@@ -232,30 +232,31 @@ dependencies = [
 
 [[package]]
 name = "cedar-policy"
-version = "2.4.2"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3d91e3b10a0f7f2911774d5e49713c4d25753466f9e11d1cd2ec627f8a2dc857"
+checksum = "2bb36693ce767682abfffa846039cb9cb06438ea4da284b715956bacb066602d"
 dependencies = [
  "cedar-policy-core",
  "cedar-policy-validator",
- "itertools",
+ "itertools 0.12.0",
  "lalrpop-util",
+ "miette",
  "ref-cast",
  "serde",
  "serde_json",
+ "serde_with",
  "smol_str",
  "thiserror",
 ]
 
 [[package]]
 name = "cedar-policy-core"
-version = "2.4.2"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd2315591c6b7e18f8038f0a0529f254235fd902b6c217aabc04f2459b0d9995"
+checksum = "c286d084e4e2d831756b54f417f644ea80946da97b644afee50a01b57e3af422"
 dependencies = [
  "either",
- "ipnet",
- "itertools",
+ "itertools 0.12.0",
  "lalrpop",
  "lalrpop-util",
  "lazy_static",
@@ -272,12 +273,12 @@ dependencies = [
 
 [[package]]
 name = "cedar-policy-formatter"
-version = "2.4.2"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ec0e42563572fa293bd371dc42a5f0c2778ed07e12285d22795381ba4e1e0d1"
+checksum = "249593c8caf3d9886de0dc3c95e4cc6a7fb83174c708935de7fa7caaff33e0c0"
 dependencies = [
  "cedar-policy-core",
- "itertools",
+ "itertools 0.12.0",
  "logos",
  "miette",
  "pretty",
@@ -287,12 +288,12 @@ dependencies = [
 
 [[package]]
 name = "cedar-policy-validator"
-version = "2.4.2"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e756e1b2a5da742ed97e65199ad6d0893e9aa4bd6b34be1de9e70bd1e6adc7df"
+checksum = "31df9ac3c89d418f3cdb6634492bb8c20e2ef13d5be5472773bea9daca7dd2ea"
 dependencies = [
  "cedar-policy-core",
- "itertools",
+ "itertools 0.12.0",
  "serde",
  "serde_json",
  "serde_with",
@@ -412,7 +413,7 @@ dependencies = [
  "criterion-plot",
  "futures",
  "is-terminal",
- "itertools",
+ "itertools 0.10.5",
  "num-traits",
  "once_cell",
  "oorandom",
@@ -434,7 +435,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6b50826342786a51a89e2da3a28f1c32b06e387201bc2d19791f622c673706b1"
 dependencies = [
  "cast",
- "itertools",
+ "itertools 0.10.5",
 ]
 
 [[package]]
@@ -930,12 +931,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ipnet"
-version = "2.9.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f518f335dce6725a761382244631d86cf0ccb2863413590b31338feb467f9c3"
-
-[[package]]
 name = "is-terminal"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -951,6 +946,15 @@ name = "itertools"
 version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25db6b064527c5d482d0423354fcd07a89a2dfe07b67892e62411946db7f07b0"
 dependencies = [
  "either",
 ]
@@ -981,7 +985,7 @@ dependencies = [
  "diff",
  "ena",
  "is-terminal",
- "itertools",
+ "itertools 0.10.5",
  "lalrpop-util",
  "petgraph",
  "pico-args",

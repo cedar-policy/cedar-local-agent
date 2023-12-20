@@ -26,7 +26,9 @@ mod test {
             Some(format!("Action::\"{action}\"").parse().unwrap()),
             Some(format!("Box::\"{resource}\"").parse().unwrap()),
             Context::empty(),
+            None,
         )
+        .unwrap()
     }
 
     fn requests_with_missing_entities() -> Vec<(Request, Decision)> {
@@ -403,7 +405,8 @@ mod test {
     }
 
     #[tokio::test]
-    async fn authorize_with_conflicting_input_entities() {
+    #[should_panic]
+    async fn authorize_with_duplicated_input_entities_should_panic() {
         let policy_set_provider = Arc::new(
             PolicySetProvider::new(
                 policy_set_provider::ConfigBuilder::default()
@@ -437,6 +440,7 @@ mod test {
         let schema_file = File::open("tests/data/sweets.schema.cedar.json").unwrap();
         let schema = Schema::from_file(schema_file).unwrap();
         let entities = Entities::from_json_file(entities_file, Some(&schema)).unwrap();
+        // This panics now due to enhanced entity validation in cedar-policy 3.0.0
         validate_requests_with_entities(
             &authorizer,
             &entities,
