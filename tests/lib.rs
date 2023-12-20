@@ -406,7 +406,7 @@ mod test {
 
     #[tokio::test]
     #[should_panic]
-    async fn authorize_with_conflicting_input_entities() {
+    async fn authorize_with_duplicated_input_entities_should_panic() {
         let policy_set_provider = Arc::new(
             PolicySetProvider::new(
                 policy_set_provider::ConfigBuilder::default()
