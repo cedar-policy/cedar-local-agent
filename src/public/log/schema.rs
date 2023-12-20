@@ -196,7 +196,7 @@ impl OpenCyberSecurityFramework {
         let response_error: Vec<String> = response
             .diagnostics()
             .errors()
-            .map(|error| error.to_string())
+            .map(std::string::ToString::to_string)
             .collect();
         unmapped.insert(
             "evaluation_errors".to_string(),
@@ -1064,7 +1064,7 @@ mod test {
 
         let errors = (0..num_of_error)
             .map(|i| AuthorizationError::PolicyEvaluationError {
-                id: PolicyID::from_string(format!("policy{}", i)),
+                id: PolicyID::from_string(format!("policy{i}")),
                 error: EvaluationError::from(ExtensionFunctionLookupError::FuncDoesNotExist {
                     name: Name::parse_unqualified_name("foo").unwrap(),
                 }),
