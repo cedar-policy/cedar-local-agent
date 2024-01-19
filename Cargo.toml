@@ -1,7 +1,7 @@
 [package]
 name = "cedar-local-agent"
 edition = "2021"
-version = "1.0.0"
+version = "1.0.1"
 license = "Apache-2.0"
 description = "Foundational library for creating Cedar-based asynchronous authorizers."
 keywords = ["cedar", "agent", "authorization", "policy", "security"]
