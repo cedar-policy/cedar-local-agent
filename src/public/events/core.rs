@@ -31,7 +31,7 @@ pub enum Event {
 }
 
 /// Gives guidance for a reasonable refresh rate for most applications
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RefreshRate {
     /// 15 seconds is a reasonable refresh rate for most applications
     FifteenSeconds,
