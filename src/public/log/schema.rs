@@ -930,9 +930,8 @@ mod test {
         AuthorizationError, Context, Entities, EntityId, EntityTypeName, EntityUid,
         EvaluationError, PolicyId, Request, Response,
     };
-    use cedar_policy_core::ast::{Name, PolicyID};
+    use cedar_policy_core::ast::{PolicyID, RestrictedExprError, Value};
     use cedar_policy_core::authorizer::Decision;
-    use cedar_policy_core::extensions::ExtensionFunctionLookupError;
     use serde_json::{from_str, to_string, to_value, Map};
 
     use crate::public::log::error::OcsfException;
@@ -1065,8 +1064,9 @@ mod test {
         let errors = (0..num_of_error)
             .map(|i| AuthorizationError::PolicyEvaluationError {
                 id: PolicyID::from_string(format!("policy{i}")),
-                error: EvaluationError::from(ExtensionFunctionLookupError::FuncDoesNotExist {
-                    name: Name::parse_unqualified_name("foo").unwrap(),
+                error: EvaluationError::from(RestrictedExprError::InvalidRestrictedExpression {
+                    feature: Default::default(),
+                    expr: Value::from(true).into(),
                 }),
             })
             .collect();

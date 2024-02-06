@@ -1,0 +1,23 @@
+@startuml
+'https://plantuml.com/sequence-diagram
+participant "Schema" as Schema
+participant "PSED EntityInfo Provider" as PSEDProvider
+participant "Core AuthZ" as CoreAuthZ
+participant "Policy Repo" as PolicyRepo
+participant "AuthZ Service" as AuthZService
+autonumber
+
+Schema -> PSEDProvider: getEntityInfos()
+PSEDProvider -> CoreAuthZ: getObjectFilter()
+CoreAuthZ -> PolicyRepo: fetchPolicies("listObject")
+PolicyRepo --> CoreAuthZ: policies
+CoreAuthZ -> CoreAuthZ: generateRequest()
+CoreAuthZ -> CoreAuthZ: generateContext()
+CoreAuthZ -> CoreAuthZ: generateEntities(contextUser)
+CoreAuthZ -> AuthZService: authorize(request, context, policies, entities)
+AuthZService --> CoreAuthZ: cedarFilter
+CoreAuthZ -> CoreAuthZ: convertToObjectFilter(cedarFilter)
+CoreAuthZ --> PSEDProvider: objectFilter
+PSEDProvider -> PSEDProvider: generateScope(objectFilter)
+
+@enduml
