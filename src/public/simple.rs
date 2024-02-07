@@ -1,7 +1,7 @@
 //! Provides a simple authorizer that takes a `SimplePolicySetProvider` and a `SimpleEntityProvider`.
 use std::sync::Arc;
 
-use cedar_policy::{Entities, Request, Response};
+use cedar_policy::{Entities, Request, ResidualResponse, Response};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::join;
@@ -185,14 +185,14 @@ where
     /// # Errors
     ///
     /// This function can error if either the entity or policy set providers fails.
-    #[instrument(fields(request_id = %Uuid::new_v4(), authorizer_id = %self.log_config.requester), skip_all, err(Debug))]
     #[cfg(feature = "partial-eval")]
+    #[instrument(fields(request_id = %Uuid::new_v4(), authorizer_id = %self.log_config.requester), skip_all, err(Debug))]
     pub async fn is_authorized_partial(
         &self,
         request: &Request,
         entities: &Entities,
     ) -> Result<PartialResponse, AuthorizerError> {
-        info!("Received request, running is_authorized...");
+        info!("Received request, running is_authorized_partial...");
 
         let entities_future = self.entity_provider.get_entities(request);
         let policy_set_future = self.policy_set_provider.get_policy_set(request);
@@ -215,8 +215,11 @@ where
         info!("Fetched Authorization data from Policy Set Provider and Entity Provider");
 
         // Skip logging for now
-        //info!("Generated OCSF log record.");
-        //self.log(request, &response.into(), entities);
+        info!("Generated OCSF log record.");
+        match &partial_response {
+            Concrete(response) => self.log(request, &response, entities),
+            Residual(residual_response) => self.log_residual(request, &residual_response, entities)
+        };
 
         info!(
             "Is_authorized_partial completed: response_decision={}",
@@ -234,6 +237,31 @@ where
         );
 
         Ok(partial_response)
+    }
+
+    #[cfg(feature = "partial-eval")]
+    #[instrument(skip_all)]
+    fn log_residual(&self, request: &Request, residual_response: &ResidualResponse, entities: &Entities) {
+        event!(target: "cedar::simple::authorizer", Level::INFO, "{}",
+            serde_json::to_string(
+                &OpenCyberSecurityFramework::create_generic(
+                    request,
+                    residual_response.diagnostics(),
+                    residual_response.residuals().policies()
+                        .map(|policy| format!("{}", policy.id()))
+                        .into_iter()
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                        .as_str(),
+                    String::from("Residuals"),
+                    entities,
+                    &self.log_config.field_set,
+                    self.log_config.requester.as_str()
+                ).unwrap_or_else(|e| {
+                    OpenCyberSecurityFramework::error(e.to_string(), self.log_config.requester.clone())
+                })
+            ).unwrap_or_else(|_| "Failed to deserialize a known Open Cyber Security Framework string.".to_string()),
+        );
     }
 }
 
