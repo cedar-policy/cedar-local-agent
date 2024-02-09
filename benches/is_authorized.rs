@@ -52,7 +52,7 @@ fn construct_authorizer(num_policies: u32) -> Authorizer<PolicySetProvider, Enti
 fn validate_request(authorizer: &Authorizer<PolicySetProvider, EntityProvider>, request: &Request) {
     let response = block_on(async {
         authorizer
-            .is_authorized(&request, &Entities::empty())
+            .is_authorized(request, &Entities::empty())
             .await
             .unwrap()
     });
@@ -89,7 +89,12 @@ fn is_authorized_partial_benchmark(c: &mut Criterion) {
         bench_group.bench_with_input(BenchmarkId::from_parameter(i), &input, |b, i| {
             let (request, entities) = i;
             b.to_async(tokio::runtime::Runtime::new().unwrap())
-                .iter(|| async { authorizer.is_authorized_partial(request, entities).await.unwrap() })
+                .iter(|| async {
+                    authorizer
+                        .is_authorized_partial(request, entities)
+                        .await
+                        .unwrap()
+                })
         });
     }
 }
@@ -97,5 +102,9 @@ fn is_authorized_partial_benchmark(c: &mut Criterion) {
 #[cfg(not(feature = "partial-eval"))]
 criterion_group!(benches, is_authorized_benchmark);
 #[cfg(feature = "partial-eval")]
-criterion_group!(benches, is_authorized_benchmark, is_authorized_partial_benchmark);
+criterion_group!(
+    benches,
+    is_authorized_benchmark,
+    is_authorized_partial_benchmark
+);
 criterion_main!(benches);

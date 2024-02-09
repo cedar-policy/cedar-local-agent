@@ -166,15 +166,15 @@ impl OpenCyberSecurityFramework {
         authorizer_name: &str,
     ) -> Result<Self, OcsfException> {
         let decision = response.decision();
-        return OpenCyberSecurityFramework::create_generic(
+        return Self::create_generic(
             request,
             response.diagnostics(),
             format!("decision is {decision:?}").as_str(),
             format!("{decision:?}"),
             entities,
             fields,
-            authorizer_name
-        )
+            authorizer_name,
+        );
     }
 
     /// Converts Request, Entities, Field Set into a filtered OCSF log.
@@ -209,10 +209,7 @@ impl OpenCyberSecurityFramework {
         let action = filtered_request.action.get_id()?;
         let resource = filtered_request.resource.get_id()?;
 
-        let reasons: Vec<String> = diagnostics
-            .reason()
-            .map(ToString::to_string)
-            .collect();
+        let reasons: Vec<String> = diagnostics.reason().map(ToString::to_string).collect();
         unmapped.insert(
             "determined_policies".to_string(),
             to_value(reasons.clone())?,
