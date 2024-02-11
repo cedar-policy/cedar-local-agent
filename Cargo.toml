@@ -39,9 +39,9 @@ cedar-policy-formatter = "3.0.1"
 cedar-policy-validator = "3.0.1"
 
 [features]
-default = ["partial-eval"]
-
-# Experimental features
+# Experimental features.
+# Enable all experimental features with `cargo build --features "experimental"`
+experimental = ["partial-eval"]
 partial-eval = ["cedar-policy/partial-eval"]
 
 [dev-dependencies]
