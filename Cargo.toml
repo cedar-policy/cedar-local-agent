@@ -33,12 +33,13 @@ tracing-core = "0.1.31"
 tracing-subscriber = "0.3.17"
 
 # Cedar
-cedar-policy = "3.0"
-cedar-policy-core = "3.0"
-cedar-policy-formatter = "3.0"
-cedar-policy-validator = "3.0"
+cedar-policy = "3.0.1"
+cedar-policy-core = "3.0.1"
+cedar-policy-formatter = "3.0.1"
+cedar-policy-validator = "3.0.1"
 
 [features]
+default = ["partial-eval"]
 
 # Experimental features
 partial-eval = ["cedar-policy/partial-eval"]
