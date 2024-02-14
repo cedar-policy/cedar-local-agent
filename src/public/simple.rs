@@ -1,9 +1,11 @@
 //! Provides a simple authorizer that takes a `SimplePolicySetProvider` and a `SimpleEntityProvider`.
 use std::sync::Arc;
 
-use cedar_policy::{Entities, Request, ResidualResponse, Response};
+use cedar_policy::{Entities, Request, Response};
 #[cfg(feature = "partial-eval")]
-use cedar_policy::{PartialResponse, PartialResponse::Concrete, PartialResponse::Residual};
+use cedar_policy::{
+    PartialResponse, PartialResponse::Concrete, PartialResponse::Residual, ResidualResponse,
+};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::join;
