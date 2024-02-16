@@ -28,6 +28,11 @@
     rustdoc::bare_urls,
     clippy::doc_markdown
 )]
-#![allow(clippy::must_use_candidate, clippy::missing_const_for_fn)]
+// FIXME: Rust 1.76 introduced a linting bug for `clippy::blocks_in_conditions`. Remove this lint from allow once fixed.
+#![allow(
+    clippy::must_use_candidate,
+    clippy::missing_const_for_fn,
+    clippy::blocks_in_conditions
+)]
 
 pub mod public;
