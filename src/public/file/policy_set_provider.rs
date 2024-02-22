@@ -63,8 +63,8 @@ pub struct PolicySetProvider {
 #[derive(Error, Debug)]
 pub enum ProviderError {
     /// Policy set file is malformed in some way
-    #[error("The Policy Set failed to be parsed at path: {0}. Cause: {1}")]
-    PolicySetParseError(String, ParseErrors),
+    #[error("{0}")]
+    PolicySetParseError(String),
     /// Can't read from disk or find the file
     #[error("IO Error: {0}")]
     IOError(#[source] std::io::Error),
@@ -96,10 +96,17 @@ impl From<std::io::Error> for ProviderError {
     }
 }
 
+fn create_policy_parse_error_message(value: &ParseErrorWrapper) -> String {
+    format!(
+        "The Policy Set failed to be parsed at path: {}. Cause: {}",
+        value.policy_set_path, value.cause
+    )
+}
+
 /// Map the `ParseErrorWrapper` to the `ProviderError::PolicySetParseError` with the file path
 impl From<ParseErrorWrapper> for ProviderError {
     fn from(value: ParseErrorWrapper) -> Self {
-        Self::PolicySetParseError(value.policy_set_path, value.cause)
+        Self::PolicySetParseError(create_policy_parse_error_message(&value))
     }
 }
 
@@ -152,9 +159,8 @@ impl UpdateProviderData for PolicySetProvider {
             .map_err(|e| UpdateProviderDataError::General(Box::new(ProviderError::IOError(e))))?;
         let policy_set =
             PolicySet::from_str(&policy_set_src).map_err(|parse_error: ParseErrors| {
-                UpdateProviderDataError::General(Box::new(ProviderError::PolicySetParseError(
-                    policy_set_path.clone(),
-                    parse_error,
+                UpdateProviderDataError::General(Box::new(ProviderError::from(
+                    ParseErrorWrapper::new(policy_set_path.clone(), parse_error),
                 )))
             })?;
         {
@@ -185,14 +191,17 @@ impl SimplePolicySetProvider for PolicySetProvider {
 
 #[cfg(test)]
 mod test {
-    use cedar_policy::{Context, Request};
+    use cedar_policy::{Context, PolicySet, Request};
     use std::io::ErrorKind;
+    use std::path::Path;
+    use std::str::FromStr;
     use std::{fs, io};
     use tempfile::NamedTempFile;
 
     use crate::public::file::policy_set_provider::ProviderError::PolicySetParseError;
     use crate::public::file::policy_set_provider::{
-        ConfigBuilder, PolicySetProvider, ProviderError,
+        create_policy_parse_error_message, ConfigBuilder, ParseErrorWrapper, PolicySetProvider,
+        ProviderError,
     };
     use crate::public::{SimplePolicySetProvider, UpdateProviderData, UpdateProviderDataError};
     #[test]
@@ -224,17 +233,25 @@ mod test {
 
     #[test]
     fn simple_policy_provider_is_malformed() {
+        let policy_path = "tests/data/malformed_policies.cedar";
+        let policy_set_src = std::fs::read_to_string(Path::new(policy_path)).unwrap();
         let error = PolicySetProvider::new(
             ConfigBuilder::default()
-                .policy_set_path("tests/data/malformed_policies.cedar")
+                .policy_set_path(policy_path)
                 .build()
                 .unwrap(),
         );
 
+        let cedar_error = PolicySet::from_str(&policy_set_src);
+
         assert!(error.is_err());
+        assert!(cedar_error.is_err());
         assert_eq!(
             error.err().unwrap().to_string(),
-            "The Policy Set failed to be parsed at path: tests/data/malformed_policies.cedar"
+            create_policy_parse_error_message(&ParseErrorWrapper::new(
+                policy_path.into(),
+                cedar_error.unwrap_err()
+            ))
         );
     }
 
@@ -305,7 +322,7 @@ mod test {
 
         let UpdateProviderDataError::General(inner_error) = update_provider_error;
         let inner_type = inner_error.downcast_ref::<ProviderError>().unwrap();
-        assert!(matches!(inner_type, PolicySetParseError(_, _)));
+        assert!(matches!(inner_type, PolicySetParseError(_)));
     }
     #[tokio::test]
     async fn simple_policy_provider_update_is_io_error() {

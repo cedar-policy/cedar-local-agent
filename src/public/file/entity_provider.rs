@@ -75,8 +75,8 @@ pub enum ProviderError {
     #[error("The Schema file failed to be parsed at path: {0}")]
     SchemaParseError(String),
     /// Entities file is malformed in some way
-    #[error("The Entities failed to be parsed at path: {0}. Cause: {1}")]
-    EntitiesError(String, EntitiesError),
+    #[error("{0}")]
+    EntitiesError(String),
 }
 
 /// A wrapper that wraps `EntitiesError` to map the error message
@@ -129,10 +129,17 @@ impl From<SchemaParseErrorWrapper> for ProviderError {
     }
 }
 
+fn create_entity_error_message(value: &EntitiesErrorWrapper) -> String {
+    format!(
+        "The Entities failed to be parsed at path: {}. Cause: {}",
+        value.entity_file_path, value.cause
+    )
+}
+
 /// Map the `EntitiesErrorWrapper` to the `ProvideError::EntitiesError`  with the file path
 impl From<EntitiesErrorWrapper> for ProviderError {
     fn from(value: EntitiesErrorWrapper) -> Self {
-        Self::EntitiesError(value.entity_file_path, value.cause)
+        Self::EntitiesError(create_entity_error_message(&value))
     }
 }
 
@@ -227,9 +234,8 @@ impl UpdateProviderData for EntityProvider {
                 })?;
                 let res = Entities::from_json_file(entities_file, Some(&schema)).map_err(
                     |entities_error| {
-                        UpdateProviderDataError::General(Box::new(ProviderError::EntitiesError(
-                            entities_path.to_string(),
-                            entities_error,
+                        UpdateProviderDataError::General(Box::new(ProviderError::from(
+                            EntitiesErrorWrapper::new(entities_path.clone(), entities_error),
                         )))
                     },
                 )?;
@@ -238,9 +244,8 @@ impl UpdateProviderData for EntityProvider {
             } else {
                 let res =
                     Entities::from_json_file(entities_file, None).map_err(|entities_error| {
-                        UpdateProviderDataError::General(Box::new(ProviderError::EntitiesError(
-                            entities_path.to_string(),
-                            entities_error,
+                        UpdateProviderDataError::General(Box::new(ProviderError::from(
+                            EntitiesErrorWrapper::new(entities_path.clone(), entities_error),
                         )))
                     })?;
                 debug!("Updated Entities from file: entities_file_path={entities_path:?}");
@@ -275,12 +280,16 @@ impl SimpleEntityProvider for EntityProvider {
 
 #[cfg(test)]
 mod test {
-    use cedar_policy::{Context, Request};
+    use cedar_policy::{Context, Entities, Request};
+    use std::fs::File;
     use std::io::ErrorKind;
     use std::{fs, io};
     use tempfile::NamedTempFile;
 
-    use crate::public::file::entity_provider::{ConfigBuilder, EntityProvider, ProviderError};
+    use crate::public::file::entity_provider::{
+        create_entity_error_message, ConfigBuilder, EntitiesErrorWrapper, EntityProvider,
+        ProviderError,
+    };
     use crate::public::{SimpleEntityProvider, UpdateProviderData, UpdateProviderDataError};
 
     #[test]
@@ -390,17 +399,25 @@ mod test {
 
     #[test]
     fn entity_provider_malformed_entities() {
+        let entities_path = "tests/data/malformed_entities.json";
+        let entities_file = File::open(entities_path).unwrap();
         let error = EntityProvider::new(
             ConfigBuilder::default()
-                .entities_path("tests/data/malformed_entities.json")
+                .entities_path(entities_path)
                 .build()
                 .unwrap(),
         );
+        let cedar_error = Entities::from_json_file(entities_file, None);
 
         assert!(error.is_err());
+        assert!(cedar_error.is_err());
+
         assert_eq!(
             error.err().unwrap().to_string(),
-            "The Entities failed to be parsed at path: tests/data/malformed_entities.json"
+            create_entity_error_message(&EntitiesErrorWrapper::new(
+                entities_path.into(),
+                cedar_error.unwrap_err()
+            ))
         );
     }
 
@@ -501,7 +518,7 @@ mod test {
 
         let UpdateProviderDataError::General(inner_error) = update_provider_error;
         let inner_type = inner_error.downcast_ref::<ProviderError>().unwrap();
-        assert!(matches!(inner_type, ProviderError::EntitiesError(_, _)));
+        assert!(matches!(inner_type, ProviderError::EntitiesError(_)));
     }
 
     #[tokio::test]
