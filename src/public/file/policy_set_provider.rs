@@ -20,7 +20,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use cedar_policy::{PolicySet, Request};
+use cedar_policy::{ParseErrors, PolicySet, Request};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;
@@ -63,8 +63,8 @@ pub struct PolicySetProvider {
 #[derive(Error, Debug)]
 pub enum ProviderError {
     /// Policy set file is malformed in some way
-    #[error("The Policy Set failed to be parsed at path: {0}")]
-    PolicySetParseError(String),
+    #[error("The Policy Set failed to be parsed at path: {0}. Cause: {1}")]
+    PolicySetParseError(String, ParseErrors),
     /// Can't read from disk or find the file
     #[error("IO Error: {0}")]
     IOError(#[source] std::io::Error),
@@ -74,15 +74,17 @@ pub enum ProviderError {
 struct ParseErrorWrapper {
     // This is the path to the file to load the policy set
     policy_set_path: String,
+    cause: ParseErrors,
 }
 
 /// Implements the constructor for the `ParseErrorWrapper`.
 impl ParseErrorWrapper {
     /// Creates a new wrapper of the `ParseErrors`
-    fn new(policy_set_path: String) -> Self {
+    fn new(policy_set_path: String, cause: ParseErrors) -> Self {
         Self {
             // This is the path to the file to load the policy set
             policy_set_path,
+            cause,
         }
     }
 }
@@ -97,7 +99,7 @@ impl From<std::io::Error> for ProviderError {
 /// Map the `ParseErrorWrapper` to the `ProviderError::PolicySetParseError` with the file path
 impl From<ParseErrorWrapper> for ProviderError {
     fn from(value: ParseErrorWrapper) -> Self {
-        Self::PolicySetParseError(value.policy_set_path)
+        Self::PolicySetParseError(value.policy_set_path, value.cause)
     }
 }
 
@@ -124,8 +126,9 @@ impl PolicySetProvider {
     pub fn new(configuration: Config) -> Result<Self, ProviderError> {
         let policy_set_path = configuration.policy_set_path;
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))?;
-        let policy_set = PolicySet::from_str(&policy_set_src)
-            .map_err(|_parse_errors| ParseErrorWrapper::new(policy_set_path.clone()))?;
+        let policy_set = PolicySet::from_str(&policy_set_src).map_err(|parse_errors| {
+            ParseErrorWrapper::new(policy_set_path.clone(), parse_errors)
+        })?;
         let policy_ids = policy_set
             .policies()
             .map(cedar_policy::Policy::id)
@@ -147,11 +150,13 @@ impl UpdateProviderData for PolicySetProvider {
         let policy_set_path = self.policy_set_path.clone();
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))
             .map_err(|e| UpdateProviderDataError::General(Box::new(ProviderError::IOError(e))))?;
-        let policy_set = PolicySet::from_str(&policy_set_src).map_err(|_| {
-            UpdateProviderDataError::General(Box::new(ProviderError::PolicySetParseError(
-                policy_set_path.clone(),
-            )))
-        })?;
+        let policy_set =
+            PolicySet::from_str(&policy_set_src).map_err(|parse_error: ParseErrors| {
+                UpdateProviderDataError::General(Box::new(ProviderError::PolicySetParseError(
+                    policy_set_path.clone(),
+                    parse_error,
+                )))
+            })?;
         {
             let mut policy_set_guard = self.policy_set.write().await;
             *policy_set_guard = Arc::new(policy_set.clone());
@@ -300,7 +305,7 @@ mod test {
 
         let UpdateProviderDataError::General(inner_error) = update_provider_error;
         let inner_type = inner_error.downcast_ref::<ProviderError>().unwrap();
-        assert!(matches!(inner_type, PolicySetParseError(_)));
+        assert!(matches!(inner_type, PolicySetParseError(_, _)));
     }
     #[tokio::test]
     async fn simple_policy_provider_update_is_io_error() {
