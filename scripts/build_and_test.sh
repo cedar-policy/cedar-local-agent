@@ -17,8 +17,8 @@ cargo doc --all-features --no-deps && \
 echo ">>>> cargo clippy --all-features --tests" && \
 RUSTFLAGS="-D warnings" cargo clippy --all-features --tests && \
 
-echo ">>>> cargo test --verbose" && \
-cargo test --verbose && \
+echo ">>>> cargo test --verbose --all-features" && \
+cargo test --verbose --all-features && \
 
 echo ">>>> cargo test --verbose --no-default-features" && \
 cargo test --verbose --no-default-features && \
