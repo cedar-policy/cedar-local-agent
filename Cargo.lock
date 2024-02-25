@@ -210,6 +210,7 @@ dependencies = [
  "cedar-policy-formatter",
  "cedar-policy-validator",
  "chrono",
+ "cool_asserts",
  "criterion",
  "derive_builder",
  "fs2",
@@ -232,9 +233,9 @@ dependencies = [
 
 [[package]]
 name = "cedar-policy"
-version = "3.0.0"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bb36693ce767682abfffa846039cb9cb06438ea4da284b715956bacb066602d"
+checksum = "e497043f26d1ae7326a27dfbfa7a1169ae96311219663d8d8d8da5053a66c9a3"
 dependencies = [
  "cedar-policy-core",
  "cedar-policy-validator",
@@ -251,9 +252,9 @@ dependencies = [
 
 [[package]]
 name = "cedar-policy-core"
-version = "3.0.0"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c286d084e4e2d831756b54f417f644ea80946da97b644afee50a01b57e3af422"
+checksum = "c91c5016e8cadabfbd1ece964cc279b6b9864766fb2d03a5f746171a3cc4a497"
 dependencies = [
  "either",
  "itertools 0.12.0",
@@ -273,9 +274,9 @@ dependencies = [
 
 [[package]]
 name = "cedar-policy-formatter"
-version = "3.0.0"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "249593c8caf3d9886de0dc3c95e4cc6a7fb83174c708935de7fa7caaff33e0c0"
+checksum = "2caf48c6c24332a745d06a5036d0d9704c3cbe2c727902f13e2647b2896b5947"
 dependencies = [
  "cedar-policy-core",
  "itertools 0.12.0",
@@ -288,9 +289,9 @@ dependencies = [
 
 [[package]]
 name = "cedar-policy-validator"
-version = "3.0.0"
+version = "3.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31df9ac3c89d418f3cdb6634492bb8c20e2ef13d5be5472773bea9daca7dd2ea"
+checksum = "9edea433dce426b8049403cb62b7f8914f476aabfcfea45e42ebd31201b3aa1e"
 dependencies = [
  "cedar-policy-core",
  "itertools 0.12.0",
@@ -375,6 +376,15 @@ name = "clap_lex"
 version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "702fc72eb24e5a1e48ce58027a675bc24edd52096d5397d4aea7c6dd9eca0bd1"
+
+[[package]]
+name = "cool_asserts"
+version = "2.0.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ee9f254e53f61e2688d3677fa2cbe4e9b950afd56f48819c98817417cf6b28ec"
+dependencies = [
+ "indent_write",
+]
 
 [[package]]
 name = "core-foundation-sys"
@@ -889,6 +899,12 @@ name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b9e0384b61958566e926dc50660321d12159025e767c18e043daf26b70104c39"
+
+[[package]]
+name = "indent_write"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cfe9645a18782869361d9c8732246be7b410ad4e919d3609ebabdac00ba12c3"
 
 [[package]]
 name = "indexmap"
