@@ -1077,6 +1077,7 @@ mod test {
         Entities::from_json_str(&entities_data, None).unwrap()
     }
 
+    #[allow(clippy::default_trait_access)]
     fn generate_response(num_of_error: usize, decision: Decision) -> Response {
         let mut policy_ids = HashSet::new();
         policy_ids.insert(PolicyId::from_str("policy1").unwrap());
