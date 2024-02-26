@@ -5,7 +5,7 @@ use std::fmt;
 use std::fmt::{Display, Formatter};
 use std::time::Instant;
 
-use cedar_policy::{Entities, EntityUid, Request, Response};
+use cedar_policy::{Diagnostics, Entities, EntityUid, Request, Response};
 use chrono::{Local, Utc};
 use derive_builder::Builder;
 use serde::{Deserialize, Serialize};
@@ -165,6 +165,33 @@ impl OpenCyberSecurityFramework {
         fields: &FieldSet,
         authorizer_name: &str,
     ) -> Result<Self, OcsfException> {
+        let decision = response.decision();
+        return Self::create_generic(
+            request,
+            response.diagnostics(),
+            format!("decision is {decision:?}").as_str(),
+            format!("{decision:?}"),
+            entities,
+            fields,
+            authorizer_name,
+        );
+    }
+
+    /// Converts Request, Entities, Field Set into a filtered OCSF log.
+    ///
+    /// # Errors
+    ///
+    /// Will return `OcsfException` if `ProductBuilder`, `MetaDataBuilder`, `ManagedEntityBuilder`
+    /// failed to build the models, Serde failed to deserializing the object and any model validation error
+    pub fn create_generic(
+        request: &Request,
+        diagnostics: &Diagnostics,
+        outcome: &str,
+        status_code: String,
+        entities: &Entities,
+        fields: &FieldSet,
+        authorizer_name: &str,
+    ) -> Result<Self, OcsfException> {
         let filtered_request = filter_request(request, entities, fields);
         let start_time = Instant::now();
 
@@ -182,19 +209,13 @@ impl OpenCyberSecurityFramework {
         let action = filtered_request.action.get_id()?;
         let resource = filtered_request.resource.get_id()?;
 
-        let decision = response.decision();
-        let reasons: Vec<String> = response
-            .diagnostics()
-            .reason()
-            .map(ToString::to_string)
-            .collect();
+        let reasons: Vec<String> = diagnostics.reason().map(ToString::to_string).collect();
         unmapped.insert(
             "determined_policies".to_string(),
             to_value(reasons.clone())?,
         );
 
-        let response_error: Vec<String> = response
-            .diagnostics()
+        let response_error: Vec<String> = diagnostics
             .errors()
             .map(std::string::ToString::to_string)
             .collect();
@@ -217,7 +238,7 @@ impl OpenCyberSecurityFramework {
 
         let message = format!(
             "Principal {principal} performed action \
-                {action} on {resource}, the decision is {decision:?} \
+                {action} on {resource}, the {outcome} \
                 determined by policy id {reasons:?} and errors {response_error:?}",
         );
 
@@ -270,7 +291,7 @@ impl OpenCyberSecurityFramework {
             .status_id(status_id)
             .status(status)
             .status_detail(status_details)
-            .status_code(format!("{decision:?}"))
+            .status_code(status_code)
             .unmapped(to_value(unmapped)?)
             .build()
     }
@@ -930,9 +951,8 @@ mod test {
         AuthorizationError, Context, Entities, EntityId, EntityTypeName, EntityUid,
         EvaluationError, PolicyId, Request, Response,
     };
-    use cedar_policy_core::ast::{Name, PolicyID};
+    use cedar_policy_core::ast::{PolicyID, RestrictedExprError, Value};
     use cedar_policy_core::authorizer::Decision;
-    use cedar_policy_core::extensions::ExtensionFunctionLookupError;
     use serde_json::{from_str, to_string, to_value, Map};
 
     use crate::public::log::error::OcsfException;
@@ -1057,6 +1077,7 @@ mod test {
         Entities::from_json_str(&entities_data, None).unwrap()
     }
 
+    #[allow(clippy::default_trait_access)]
     fn generate_response(num_of_error: usize, decision: Decision) -> Response {
         let mut policy_ids = HashSet::new();
         policy_ids.insert(PolicyId::from_str("policy1").unwrap());
@@ -1065,8 +1086,9 @@ mod test {
         let errors = (0..num_of_error)
             .map(|i| AuthorizationError::PolicyEvaluationError {
                 id: PolicyID::from_string(format!("policy{i}")),
-                error: EvaluationError::from(ExtensionFunctionLookupError::FuncDoesNotExist {
-                    name: Name::parse_unqualified_name("foo").unwrap(),
+                error: EvaluationError::from(RestrictedExprError::InvalidRestrictedExpression {
+                    feature: Default::default(),
+                    expr: Value::from(true).into(),
                 }),
             })
             .collect();

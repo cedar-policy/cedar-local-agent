@@ -2,6 +2,10 @@
 use std::sync::Arc;
 
 use cedar_policy::{Entities, Request, Response};
+#[cfg(feature = "partial-eval")]
+use cedar_policy::{
+    PartialResponse, PartialResponse::Concrete, PartialResponse::Residual, ResidualResponse,
+};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::join;
@@ -177,6 +181,94 @@ where
             ).unwrap_or_else(|_| "Failed to deserialize a known Open Cyber Security Framework string.".to_string()),
         );
     }
+
+    /// Authorize Partial
+    ///
+    /// # Errors
+    ///
+    /// This function can error if either the entity or policy set providers fails.
+    #[cfg(feature = "partial-eval")]
+    #[instrument(fields(request_id = %Uuid::new_v4(), authorizer_id = %self.log_config.requester), skip_all, err(Debug))]
+    pub async fn is_authorized_partial(
+        &self,
+        request: &Request,
+        entities: &Entities,
+    ) -> Result<PartialResponse, AuthorizerError> {
+        info!("Received request, running is_authorized_partial...");
+
+        let entities_future = self.entity_provider.get_entities(request);
+        let policy_set_future = self.policy_set_provider.get_policy_set(request);
+        let (fetched_entities, policy_set) = join!(entities_future, policy_set_future);
+        let merged_entities = Entities::from_entities(
+            fetched_entities?
+                .as_ref()
+                .iter()
+                .chain(entities.iter())
+                .cloned(),
+            None,
+        )
+        .map_err(|e| AuthorizerError::General(Box::new(e)))?;
+
+        let partial_response = cedar_policy::Authorizer::new().is_authorized_partial(
+            request,
+            policy_set?.as_ref(),
+            &merged_entities.partial(),
+        );
+        info!("Fetched Authorization data from Policy Set Provider and Entity Provider");
+
+        // Skip logging for now
+        info!("Generated OCSF log record.");
+        match &partial_response {
+            Concrete(response) => self.log(request, response, entities),
+            Residual(residual_response) => self.log_residual(request, residual_response, entities),
+        };
+
+        info!(
+            "Is_authorized_partial completed: response_decision={}",
+            match &partial_response {
+                Concrete(response) => format!("{:?}", response.decision()),
+                Residual(residual_response) => format!("{:?}", residual_response.residuals()),
+            }
+        );
+        debug!(
+            "This decision was reached because: response_diagnostics={:?}",
+            match &partial_response {
+                Concrete(response) => response.diagnostics(),
+                Residual(residual_response) => residual_response.diagnostics(),
+            }
+        );
+
+        Ok(partial_response)
+    }
+
+    #[cfg(feature = "partial-eval")]
+    #[instrument(skip_all)]
+    fn log_residual(
+        &self,
+        request: &Request,
+        residual_response: &ResidualResponse,
+        entities: &Entities,
+    ) {
+        event!(target: "cedar::simple::authorizer", Level::INFO, "{}",
+            serde_json::to_string(
+                &OpenCyberSecurityFramework::create_generic(
+                    request,
+                    residual_response.diagnostics(),
+                    residual_response.residuals().policies()
+                        .map(|policy| format!("{}", policy.id()))
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                        .as_str(),
+                    String::from("Residuals"),
+                    entities,
+                    &self.log_config.field_set,
+                    self.log_config.requester.as_str()
+                ).unwrap_or_else(|e| {
+                    OpenCyberSecurityFramework::error(e.to_string(), self.log_config.requester.clone())
+                })
+            ).unwrap_or_else(|_| "Failed to deserialize a known Open Cyber Security Framework string.".to_string()),
+        );
+    }
 }
 
 #[cfg(test)]
@@ -324,5 +416,135 @@ mod test {
             .await;
 
         assert!(result.is_err());
+    }
+}
+
+#[cfg(test)]
+#[cfg(feature = "partial-eval")]
+mod test_partial {
+    use std::sync::Arc;
+
+    use async_trait::async_trait;
+    use cedar_policy::{Context, Entities, PartialResponse, Policy, PolicySet, Request};
+    use cedar_policy_core::authorizer::Decision;
+    use cool_asserts::assert_matches;
+
+    use crate::public::log::DEFAULT_REQUESTER_NAME;
+    use crate::public::simple::test::{MockEntityProvider, MockPolicySetProvider};
+    use crate::public::simple::{Authorizer, AuthorizerConfigBuilder};
+    use crate::public::{PolicySetProviderError, SimplePolicySetProvider};
+
+    #[tokio::test]
+    async fn simple_authorizer_partial_no_resource_is_ok() {
+        let authorizer: Authorizer<MockPolicySetProvider, MockEntityProvider> = Authorizer::new(
+            AuthorizerConfigBuilder::default()
+                .policy_set_provider(Arc::new(MockPolicySetProvider))
+                .entity_provider(Arc::new(MockEntityProvider))
+                .build()
+                .unwrap(),
+        );
+
+        let result = authorizer
+            .is_authorized_partial(
+                &Request::builder()
+                    .principal(Some(r#"User::"Mike""#.parse().unwrap()))
+                    .action(Some(r#"Action::"View""#.parse().unwrap()))
+                    .context(Context::empty())
+                    .build()
+                    .unwrap(),
+                &Entities::empty(),
+            )
+            .await;
+
+        assert_matches!(result, Ok(partial_response) =>
+            assert_matches!(partial_response, PartialResponse::Concrete(response) =>
+                assert_eq!(response.decision(), Decision::Deny)
+            )
+        );
+        assert_eq!(authorizer.log_config.requester, DEFAULT_REQUESTER_NAME);
+        assert!(!authorizer.log_config.field_set.principal);
+    }
+
+    #[tokio::test]
+    async fn simple_authorizer_partial_no_principal_is_ok() {
+        let authorizer: Authorizer<MockPolicySetProvider, MockEntityProvider> = Authorizer::new(
+            AuthorizerConfigBuilder::default()
+                .policy_set_provider(Arc::new(MockPolicySetProvider))
+                .entity_provider(Arc::new(MockEntityProvider))
+                .build()
+                .unwrap(),
+        );
+
+        let result = authorizer
+            .is_authorized_partial(
+                &Request::builder()
+                    .action(Some(r#"Action::"View""#.parse().unwrap()))
+                    .resource(Some(r#"Box::"10""#.parse().unwrap()))
+                    .context(Context::empty())
+                    .build()
+                    .unwrap(),
+                &Entities::empty(),
+            )
+            .await;
+
+        assert_matches!(result, Ok(partial_response) =>
+            assert_matches!(partial_response, PartialResponse::Concrete(response) =>
+                assert_eq!(response.decision(), Decision::Deny)
+            )
+        );
+        assert_eq!(authorizer.log_config.requester, DEFAULT_REQUESTER_NAME);
+        assert!(!authorizer.log_config.field_set.principal);
+    }
+
+    #[derive(Debug, Default)]
+    pub struct MockPolicySetProviderPartial;
+
+    #[async_trait]
+    impl SimplePolicySetProvider for MockPolicySetProviderPartial {
+        async fn get_policy_set(
+            &self,
+            _: &Request,
+        ) -> Result<Arc<PolicySet>, PolicySetProviderError> {
+            let policy = Policy::parse(
+                Some("test".into()),
+                r#"permit(principal == User::"Mike", action, resource == Box::"10");"#,
+            )
+            .expect("Failed to parse");
+            let mut policy_set = PolicySet::new();
+            policy_set.add(policy).expect("Failed to add");
+            Ok(Arc::new(policy_set))
+        }
+    }
+
+    #[tokio::test]
+    async fn simple_authorizer_partial_result() {
+        let authorizer: Authorizer<MockPolicySetProviderPartial, MockEntityProvider> =
+            Authorizer::new(
+                AuthorizerConfigBuilder::default()
+                    .policy_set_provider(Arc::new(MockPolicySetProviderPartial))
+                    .entity_provider(Arc::new(MockEntityProvider))
+                    .build()
+                    .unwrap(),
+            );
+
+        let result = authorizer
+            .is_authorized_partial(
+                &Request::builder()
+                    .action(Some(r#"Action::"View""#.parse().unwrap()))
+                    .resource(Some(r#"Box::"10""#.parse().unwrap()))
+                    .context(Context::empty())
+                    .build()
+                    .unwrap(),
+                &Entities::empty(),
+            )
+            .await;
+
+        assert_matches!(result, Ok(partial_response) =>
+            assert_matches!(partial_response, PartialResponse::Residual(residual_response) => {
+                assert_eq!(residual_response.residuals().policies().count(), 1);
+            })
+        );
+        assert_eq!(authorizer.log_config.requester, DEFAULT_REQUESTER_NAME);
+        assert!(!authorizer.log_config.field_set.principal);
     }
 }
