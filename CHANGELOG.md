@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 - Added derive Clone to RefreshRate struct. 
+- Add cause for entity and policy provider errors
 
 ### Added
 

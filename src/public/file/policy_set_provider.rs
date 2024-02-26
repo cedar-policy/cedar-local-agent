@@ -20,7 +20,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use cedar_policy::{PolicySet, Request};
+use cedar_policy::{ParseErrors, PolicySet, Request};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;
@@ -63,7 +63,7 @@ pub struct PolicySetProvider {
 #[derive(Error, Debug)]
 pub enum ProviderError {
     /// Policy set file is malformed in some way
-    #[error("The Policy Set failed to be parsed at path: {0}")]
+    #[error("{0}")]
     PolicySetParseError(String),
     /// Can't read from disk or find the file
     #[error("IO Error: {0}")]
@@ -74,15 +74,17 @@ pub enum ProviderError {
 struct ParseErrorWrapper {
     // This is the path to the file to load the policy set
     policy_set_path: String,
+    cause: ParseErrors,
 }
 
 /// Implements the constructor for the `ParseErrorWrapper`.
 impl ParseErrorWrapper {
     /// Creates a new wrapper of the `ParseErrors`
-    fn new(policy_set_path: String) -> Self {
+    fn new(policy_set_path: String, cause: ParseErrors) -> Self {
         Self {
             // This is the path to the file to load the policy set
             policy_set_path,
+            cause,
         }
     }
 }
@@ -94,10 +96,17 @@ impl From<std::io::Error> for ProviderError {
     }
 }
 
+fn create_policy_parse_error_message(value: &ParseErrorWrapper) -> String {
+    format!(
+        "The Policy Set failed to be parsed at path: {}. Cause: {}",
+        value.policy_set_path, value.cause
+    )
+}
+
 /// Map the `ParseErrorWrapper` to the `ProviderError::PolicySetParseError` with the file path
 impl From<ParseErrorWrapper> for ProviderError {
     fn from(value: ParseErrorWrapper) -> Self {
-        Self::PolicySetParseError(value.policy_set_path)
+        Self::PolicySetParseError(create_policy_parse_error_message(&value))
     }
 }
 
@@ -124,8 +133,9 @@ impl PolicySetProvider {
     pub fn new(configuration: Config) -> Result<Self, ProviderError> {
         let policy_set_path = configuration.policy_set_path;
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))?;
-        let policy_set = PolicySet::from_str(&policy_set_src)
-            .map_err(|_parse_errors| ParseErrorWrapper::new(policy_set_path.clone()))?;
+        let policy_set = PolicySet::from_str(&policy_set_src).map_err(|parse_errors| {
+            ParseErrorWrapper::new(policy_set_path.clone(), parse_errors)
+        })?;
         let policy_ids = policy_set
             .policies()
             .map(cedar_policy::Policy::id)
@@ -147,11 +157,12 @@ impl UpdateProviderData for PolicySetProvider {
         let policy_set_path = self.policy_set_path.clone();
         let policy_set_src = std::fs::read_to_string(Path::new(policy_set_path.as_str()))
             .map_err(|e| UpdateProviderDataError::General(Box::new(ProviderError::IOError(e))))?;
-        let policy_set = PolicySet::from_str(&policy_set_src).map_err(|_| {
-            UpdateProviderDataError::General(Box::new(ProviderError::PolicySetParseError(
-                policy_set_path.clone(),
-            )))
-        })?;
+        let policy_set =
+            PolicySet::from_str(&policy_set_src).map_err(|parse_error: ParseErrors| {
+                UpdateProviderDataError::General(Box::new(ProviderError::from(
+                    ParseErrorWrapper::new(policy_set_path.clone(), parse_error),
+                )))
+            })?;
         {
             let mut policy_set_guard = self.policy_set.write().await;
             *policy_set_guard = Arc::new(policy_set.clone());
@@ -180,14 +191,17 @@ impl SimplePolicySetProvider for PolicySetProvider {
 
 #[cfg(test)]
 mod test {
-    use cedar_policy::{Context, Request};
+    use cedar_policy::{Context, PolicySet, Request};
     use std::io::ErrorKind;
+    use std::path::Path;
+    use std::str::FromStr;
     use std::{fs, io};
     use tempfile::NamedTempFile;
 
     use crate::public::file::policy_set_provider::ProviderError::PolicySetParseError;
     use crate::public::file::policy_set_provider::{
-        ConfigBuilder, PolicySetProvider, ProviderError,
+        create_policy_parse_error_message, ConfigBuilder, ParseErrorWrapper, PolicySetProvider,
+        ProviderError,
     };
     use crate::public::{SimplePolicySetProvider, UpdateProviderData, UpdateProviderDataError};
     #[test]
@@ -219,17 +233,25 @@ mod test {
 
     #[test]
     fn simple_policy_provider_is_malformed() {
+        let policy_path = "tests/data/malformed_policies.cedar";
+        let policy_set_src = std::fs::read_to_string(Path::new(policy_path)).unwrap();
         let error = PolicySetProvider::new(
             ConfigBuilder::default()
-                .policy_set_path("tests/data/malformed_policies.cedar")
+                .policy_set_path(policy_path)
                 .build()
                 .unwrap(),
         );
 
+        let cedar_error = PolicySet::from_str(&policy_set_src);
+
         assert!(error.is_err());
+        assert!(cedar_error.is_err());
         assert_eq!(
             error.err().unwrap().to_string(),
-            "The Policy Set failed to be parsed at path: tests/data/malformed_policies.cedar"
+            create_policy_parse_error_message(&ParseErrorWrapper::new(
+                policy_path.into(),
+                cedar_error.unwrap_err()
+            ))
         );
     }
 

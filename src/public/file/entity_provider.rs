@@ -20,7 +20,7 @@ use std::io::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use cedar_policy::{Entities, Request, Schema};
+use cedar_policy::{Entities, EntitiesError, Request, Schema};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;
@@ -75,7 +75,7 @@ pub enum ProviderError {
     #[error("The Schema file failed to be parsed at path: {0}")]
     SchemaParseError(String),
     /// Entities file is malformed in some way
-    #[error("The Entities failed to be parsed at path: {0}")]
+    #[error("{0}")]
     EntitiesError(String),
 }
 
@@ -83,6 +83,7 @@ pub enum ProviderError {
 struct EntitiesErrorWrapper {
     // This is the path to the file to load entities
     entity_file_path: String,
+    cause: EntitiesError,
 }
 
 /// A wrapper that wraps `SchemaParseError` to map the error message
@@ -94,10 +95,11 @@ struct SchemaParseErrorWrapper {
 /// Implements the constructor for the `EntitiesErrorWrapper`.
 impl EntitiesErrorWrapper {
     /// Creates a new wrapper of the `EntitiesError`
-    fn new(entity_file_path: String) -> Self {
+    fn new(entity_file_path: String, cause: EntitiesError) -> Self {
         Self {
             // This is the path to the file to load entities.
             entity_file_path,
+            cause,
         }
     }
 }
@@ -127,10 +129,17 @@ impl From<SchemaParseErrorWrapper> for ProviderError {
     }
 }
 
+fn create_entity_error_message(value: &EntitiesErrorWrapper) -> String {
+    format!(
+        "The Entities failed to be parsed at path: {}. Cause: {}",
+        value.entity_file_path, value.cause
+    )
+}
+
 /// Map the `EntitiesErrorWrapper` to the `ProvideError::EntitiesError`  with the file path
 impl From<EntitiesErrorWrapper> for ProviderError {
     fn from(value: EntitiesErrorWrapper) -> Self {
-        Self::EntitiesError(value.entity_file_path)
+        Self::EntitiesError(create_entity_error_message(&value))
     }
 }
 
@@ -165,16 +174,17 @@ impl EntityProvider {
                 let schema_file = File::open(schema_path)?;
                 let schema = Schema::from_file(schema_file)
                     .map_err(|_schema_error| SchemaParseErrorWrapper::new(schema_path.clone()))?;
-                let res = Entities::from_json_file(entities_file, Some(&schema))
-                    .map_err(|_entities_error| EntitiesErrorWrapper::new(entities_path.clone()))?;
+                let res = Entities::from_json_file(entities_file, Some(&schema)).map_err(
+                    |entities_error| {
+                        EntitiesErrorWrapper::new(entities_path.clone(), entities_error)
+                    },
+                )?;
                 debug!("Fetched Entities from file with Schema: entities_file_path={entities_path:?}: schema_file_path={schema_path:?}");
                 res
             } else {
                 let res =
-                    Entities::from_json_file(entities_file, None).map_err(|_entities_error| {
-                        EntitiesErrorWrapper {
-                            entity_file_path: entities_path.clone(),
-                        }
+                    Entities::from_json_file(entities_file, None).map_err(|entities_error| {
+                        EntitiesErrorWrapper::new(entities_path.clone(), entities_error)
                     })?;
                 debug!("Fetched Entities from file: entities_file_path={entities_path:?}");
                 res
@@ -222,19 +232,22 @@ impl UpdateProviderData for EntityProvider {
                         schema_path.to_string(),
                     )))
                 })?;
-                let res = Entities::from_json_file(entities_file, Some(&schema)).map_err(|_| {
-                    UpdateProviderDataError::General(Box::new(ProviderError::EntitiesError(
-                        entities_path.to_string(),
-                    )))
-                })?;
+                let res = Entities::from_json_file(entities_file, Some(&schema)).map_err(
+                    |entities_error| {
+                        UpdateProviderDataError::General(Box::new(ProviderError::from(
+                            EntitiesErrorWrapper::new(entities_path.clone(), entities_error),
+                        )))
+                    },
+                )?;
                 debug!("Updated Entities from file with Schema: entities_file_path={entities_path:?}: schema_file_path={schema_path:?}");
                 res
             } else {
-                let res = Entities::from_json_file(entities_file, None).map_err(|_| {
-                    UpdateProviderDataError::General(Box::new(ProviderError::EntitiesError(
-                        entities_path.to_string(),
-                    )))
-                })?;
+                let res =
+                    Entities::from_json_file(entities_file, None).map_err(|entities_error| {
+                        UpdateProviderDataError::General(Box::new(ProviderError::from(
+                            EntitiesErrorWrapper::new(entities_path.clone(), entities_error),
+                        )))
+                    })?;
                 debug!("Updated Entities from file: entities_file_path={entities_path:?}");
                 res
             };
@@ -267,12 +280,16 @@ impl SimpleEntityProvider for EntityProvider {
 
 #[cfg(test)]
 mod test {
-    use cedar_policy::{Context, Request};
+    use cedar_policy::{Context, Entities, Request};
+    use std::fs::File;
     use std::io::ErrorKind;
     use std::{fs, io};
     use tempfile::NamedTempFile;
 
-    use crate::public::file::entity_provider::{ConfigBuilder, EntityProvider, ProviderError};
+    use crate::public::file::entity_provider::{
+        create_entity_error_message, ConfigBuilder, EntitiesErrorWrapper, EntityProvider,
+        ProviderError,
+    };
     use crate::public::{SimpleEntityProvider, UpdateProviderData, UpdateProviderDataError};
 
     #[test]
@@ -382,17 +399,25 @@ mod test {
 
     #[test]
     fn entity_provider_malformed_entities() {
+        let entities_path = "tests/data/malformed_entities.json";
+        let entities_file = File::open(entities_path).unwrap();
         let error = EntityProvider::new(
             ConfigBuilder::default()
-                .entities_path("tests/data/malformed_entities.json")
+                .entities_path(entities_path)
                 .build()
                 .unwrap(),
         );
+        let cedar_error = Entities::from_json_file(entities_file, None);
 
         assert!(error.is_err());
+        assert!(cedar_error.is_err());
+
         assert_eq!(
             error.err().unwrap().to_string(),
-            "The Entities failed to be parsed at path: tests/data/malformed_entities.json"
+            create_entity_error_message(&EntitiesErrorWrapper::new(
+                entities_path.into(),
+                cedar_error.unwrap_err()
+            ))
         );
     }
 
