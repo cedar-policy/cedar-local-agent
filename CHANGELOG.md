@@ -19,6 +19,7 @@ Cedar Local Agent Version: 1.1.0
 - Added derive Clone to RefreshRate struct.
 - Add cause for entity and policy provider errors
 - Add support for partial evaluation
+- Add better provider parsing error messages
 
 ## 1.0.0 - 2023-12-14
 Cedar Local Agent Version: 1.0.0
