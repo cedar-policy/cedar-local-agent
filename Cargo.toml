@@ -58,6 +58,3 @@ bench = false
 [[bench]]
 name = "is_authorized"
 harness = false
-
-[[example]]
-name = "simple"

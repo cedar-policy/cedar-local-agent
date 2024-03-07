@@ -1,3 +1,5 @@
+//! This file can be used as a simple example or as a demo to ensure that there are no semver violations
+
 use cedar_local_agent::public::file::entity_provider::EntityProvider;
 use cedar_local_agent::public::file::policy_set_provider::PolicySetProvider;
 use cedar_local_agent::public::file::{entity_provider, policy_set_provider};
@@ -12,9 +14,7 @@ fn construct_request() -> Request {
         Some("Action::\"request\"".parse().unwrap()),
         Some("Resource::\"request\"".parse().unwrap()),
         Context::empty(),
-        None,
     )
-    .unwrap()
 }
 
 #[inline]
@@ -22,21 +22,21 @@ fn construct_authorizer() -> Authorizer<PolicySetProvider, EntityProvider> {
     let policy_set_provider = Arc::new(
         PolicySetProvider::new(
             policy_set_provider::ConfigBuilder::default()
-                .policy_set_path("examples/simple/simple.cedar")
+                .policy_set_path("simple.cedar")
                 .build()
                 .unwrap(),
         )
-        .unwrap(),
+            .unwrap(),
     );
 
     let entity_provider = Arc::new(
         EntityProvider::new(
             entity_provider::ConfigBuilder::default()
-                .entities_path("examples/simple/simple.entities.json")
+                .entities_path("simple.entities.json")
                 .build()
                 .unwrap(),
         )
-        .unwrap(),
+            .unwrap(),
     );
 
     Authorizer::new(

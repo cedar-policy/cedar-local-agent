@@ -1,0 +1,14 @@
+[package]
+name = "simple_semver_check"
+version = "1.0.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# Update the branch here when a new version is released
+cedar-local-agent = { git = "https://github.com/cedar-policy/cedar-local-agent.git", branch = "release/1.0.0" }
+# When creating a new release, update the branch here
+cedar-policy = "2.4.3"
+cedar-policy-core = "2.4.3"
+tokio = "1.36.0"
