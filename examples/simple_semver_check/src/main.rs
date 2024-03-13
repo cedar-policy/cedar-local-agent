@@ -49,6 +49,7 @@ fn construct_authorizer() -> Authorizer<PolicySetProvider, EntityProvider> {
     )
 }
 
+/// NOTE: This file should only be updated when a new release is added
 /// Create dataset with `cargo run --bin data_gen -- simple <number of policies>`
 ///
 /// You can use `cargo flamegraph --example simple_large_data --root --freq 5000` to profile this function.
