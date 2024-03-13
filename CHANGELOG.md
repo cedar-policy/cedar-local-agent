@@ -13,9 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-## 1.1.0 - 2024-02-13
-Cedar Local Agent Version: 1.1.0
-- Upgrade to Cedar dependencies to 3.0.0.
+## 2.0.0 - 2024-03-13
+Cedar Local Agent Version: 2.0.0
+- Upgrade to Cedar dependencies to 3.1.0.
 - Added derive Clone to RefreshRate struct.
 - Add cause for entity and policy provider errors
 - Add support for partial evaluation

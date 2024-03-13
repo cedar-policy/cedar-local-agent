@@ -14,7 +14,8 @@ fn construct_request() -> Request {
         Some("Action::\"request\"".parse().unwrap()),
         Some("Resource::\"request\"".parse().unwrap()),
         Context::empty(),
-    )
+        None
+    ).unwrap()
 }
 
 #[inline]
