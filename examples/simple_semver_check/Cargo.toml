@@ -7,8 +7,8 @@ edition = "2021"
 
 [dependencies]
 # Update the branch here when a new version is released
-cedar-local-agent = { git = "https://github.com/cedar-policy/cedar-local-agent.git", branch = "release/1.0.0" }
+cedar-local-agent = { path="../.." }
 # When creating a new release, update the branch here
-cedar-policy = "2.4.3"
-cedar-policy-core = "2.4.3"
+cedar-policy = "3.1.0"
+cedar-policy-core = "3.1.0"
 tokio = "1.36.0"
