@@ -450,8 +450,7 @@ mod test_partial {
                     .principal(Some(r#"User::"Mike""#.parse().unwrap()))
                     .action(Some(r#"Action::"View""#.parse().unwrap()))
                     .context(Context::empty())
-                    .build()
-                    .unwrap(),
+                    .build(),
                 &Entities::empty(),
             )
             .await;
@@ -481,8 +480,7 @@ mod test_partial {
                     .action(Some(r#"Action::"View""#.parse().unwrap()))
                     .resource(Some(r#"Box::"10""#.parse().unwrap()))
                     .context(Context::empty())
-                    .build()
-                    .unwrap(),
+                    .build(),
                 &Entities::empty(),
             )
             .await;
@@ -533,8 +531,7 @@ mod test_partial {
                     .action(Some(r#"Action::"View""#.parse().unwrap()))
                     .resource(Some(r#"Box::"10""#.parse().unwrap()))
                     .context(Context::empty())
-                    .build()
-                    .unwrap(),
+                    .build(),
                 &Entities::empty(),
             )
             .await;
