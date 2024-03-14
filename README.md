@@ -27,7 +27,7 @@ Add `cedar-local-agent` as a dependency in your `Cargo.toml` file. For example:
 
 ```toml
 [dependencies]
-cedar-local-agent = "1.0"
+cedar-local-agent = "2"
 ```
 
 ## Quick Start
