@@ -9,8 +9,7 @@ use cedar_local_agent::public::file::entity_provider::EntityProvider;
 use cedar_local_agent::public::file::policy_set_provider::PolicySetProvider;
 use cedar_local_agent::public::file::{entity_provider, policy_set_provider};
 use cedar_local_agent::public::simple::{Authorizer, AuthorizerConfigBuilder};
-use cedar_policy::{Context, Entities, Request};
-use cedar_policy_core::authorizer::Decision;
+use cedar_policy::{Context, Decision, Entities, Request};
 
 #[tokio::main]
 pub async fn main() {
@@ -19,7 +18,8 @@ pub async fn main() {
      */
 
     // Example of creating a new log file in the format of output/tracing_example_logs/application.log.yyyy-MM-dd-HH-mm minutely
-    let roller = tracing_appender::rolling::minutely("output/tracing_example_logs", "application.log");
+    let roller =
+        tracing_appender::rolling::minutely("output/tracing_example_logs", "application.log");
     let (non_blocking, _guard) = tracing_appender::non_blocking(roller);
 
     // Example of create a filter that only logs INFO level messages from the `cedar_local_agent` crate
@@ -74,7 +74,9 @@ pub async fn main() {
                     Some(format!("Action::\"read\"").parse().unwrap()),
                     Some(format!("Box::\"3\"").parse().unwrap()),
                     Context::empty(),
-                ),
+                    None,
+                )
+                .unwrap(),
                 &Entities::empty()
             )
             .await

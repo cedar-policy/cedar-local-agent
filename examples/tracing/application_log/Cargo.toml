@@ -1,21 +1,21 @@
 [package]
 name = "tracing-example"
-edition = "2023"
+edition = "2021"
 version = "0.1.0"
 
 publish = false
 
 [dependencies]
-cedar-local-agent = { version = "1.0",  path = "../../../cedar-local-agent" }
+cedar-local-agent = { version = "2.0",  path = "../../../" }
 
 # Tracing
-tracing = "0.1.37"
-tracing-appender = "0.2.2"
-tracing-core = "0.1.31"
-tracing-subscriber = { version = "0.3.17", features = ["json"] }
+tracing = "0.1"
+tracing-appender = "0.2"
+tracing-core = "0.1"
+tracing-subscriber = { version = "0.3", features = ["json"] }
 
 # Cedar
-cedar-policy = "2.3.0"
+cedar-policy = "3.1"
 
 # Tokio
-tokio = "1.29.1"
+tokio = "1"
