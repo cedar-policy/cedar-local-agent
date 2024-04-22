@@ -205,9 +205,9 @@ impl OpenCyberSecurityFramework {
         // Cedar will return None when the evaluation is only partial. This check will raise an error
         // and not continue to obtain the entity information below. Consider remove this check after
         // this issue resolved. https://github.com/cedar-policy/cedar/issues/72
-        let principal = filtered_request.principal.get_id()?;
-        let action = filtered_request.action.get_id()?;
-        let resource = filtered_request.resource.get_id()?;
+        let principal = filtered_request.principal.get_id();
+        let action = filtered_request.action.get_id();
+        let resource = filtered_request.resource.get_id();
 
         let reasons: Vec<String> = diagnostics.reason().map(ToString::to_string).collect();
         unmapped.insert(
@@ -375,8 +375,8 @@ fn generate_managed_entity(
 
     entity_details_map.insert("Parents".to_string(), to_value(parents)?);
     Ok(ManagedEntityBuilder::default()
-        .name(component.get_id()?)
-        .entity_type(component.get_type_name()?)
+        .name(component.get_id())
+        .entity_type(component.get_type_name())
         .data(to_value(entity_details_map)?)
         .build()?)
 }
@@ -884,8 +884,8 @@ struct FilteredRequest {
 pub(crate) enum EntityComponent {
     /// A concrete EntityUID
     Concrete(EntityUid),
-    /// An EntityUID left as unknown for partial evaluation
-    Unknown,
+    /// An entity that is not specified / concrete.
+    Unspecified,
     #[default]
     /// No EntityUID because it was filtered out.
     None,
@@ -900,8 +900,8 @@ impl Display for EntityComponent {
             Self::None => {
                 write!(f, "{SECRET_STRING}")
             }
-            Self::Unknown => {
-                write!(f, "partial evaluation")
+            Self::Unspecified => {
+                write!(f, "*")
             }
         }
     }
@@ -909,36 +909,27 @@ impl Display for EntityComponent {
 
 impl EntityComponent {
     /// Gets the component types name.
-    ///
-    /// # Errors
-    ///
-    /// Cedar will return None when the evaluation is only partial. `get_type_name()` will raise an error
-    /// Consider remove this check after this [issue](https://github.com/cedar-policy/cedar/issues/72) resolved.
-    pub fn get_type_name(&self) -> Result<String, OcsfException> {
+    pub fn get_type_name(&self) -> String {
         match self {
-            Self::Concrete(euid) => Ok(euid.type_name().to_string()),
-            Self::Unknown => Err(OcsfException::CedarPartialEvaluation),
-            Self::None => Ok(SECRET_STRING.to_string()),
+            Self::Concrete(euid) => euid.type_name().to_string(),
+            Self::None => SECRET_STRING.to_string(),
+            Self::Unspecified => "*".to_string(),
         }
     }
 
     /// Gets the Id of the component.
-    ///
-    /// # Errors
-    ///
-    /// Will return `CedarPartialEvaluation` if cedar result in a residual for partial evaluation
-    pub fn get_id(&self) -> Result<String, OcsfException> {
+    pub fn get_id(&self) -> String {
         match self {
-            Self::Concrete(euid) => Ok(euid.id().to_string()),
-            Self::Unknown => Err(OcsfException::CedarPartialEvaluation),
-            Self::None => Ok(SECRET_STRING.to_string()),
+            Self::Concrete(euid) => euid.id().to_string(),
+            Self::None => SECRET_STRING.to_string(),
+            Self::Unspecified => "*".to_string(),
         }
     }
 }
 
 impl From<Option<EntityUid>> for EntityComponent {
     fn from(value: Option<EntityUid>) -> Self {
-        value.map_or_else(|| Self::Unknown, Self::Concrete)
+        value.map_or_else(|| Self::Unspecified, Self::Concrete)
     }
 }
 
@@ -961,7 +952,8 @@ mod test {
         filter_request, ActivityId, EnrichmentArray, EnrichmentArrayBuilder, EntityComponent,
         ManagedEntity, ManagedEntityBuilder, MetaData, MetaDataBuilder, OpenCyberSecurityFramework,
         OpenCyberSecurityFrameworkBuilder, ProductBuilder, SeverityId, TypeUid,
-        ALLOWED_ACTIVITY_NAME_LEN, ALLOWED_ENRICHMENT_ARRAY_LEN, OCSF_SCHEMA_VERSION, VENDOR_NAME,
+        ALLOWED_ACTIVITY_NAME_LEN, ALLOWED_ENRICHMENT_ARRAY_LEN, OCSF_SCHEMA_VERSION,
+        SECRET_STRING, VENDOR_NAME,
     };
     use crate::public::log::{FieldLevel, FieldSet, FieldSetBuilder};
 
@@ -1564,14 +1556,18 @@ mod test {
     }
 
     #[test]
-    fn display_entity_component_unknown() {
-        let component = EntityComponent::Unknown;
-        assert_eq!("partial evaluation", component.to_string());
+    fn display_entity_component_unspecified() {
+        let component = EntityComponent::Unspecified;
+        assert_eq!("*", component.to_string());
+        assert_eq!("*", component.get_id());
+        assert_eq!("*", component.get_type_name());
     }
 
     #[test]
-    fn check_partial_evaluation_error() {
-        let component = EntityComponent::Unknown;
-        assert!(component.get_id().is_err());
+    fn display_entity_component_filtered_out() {
+        let component = EntityComponent::None;
+        assert_eq!(SECRET_STRING.to_string(), component.to_string());
+        assert_eq!(SECRET_STRING.to_string(), component.get_id());
+        assert_eq!(SECRET_STRING.to_string(), component.get_type_name());
     }
 }
