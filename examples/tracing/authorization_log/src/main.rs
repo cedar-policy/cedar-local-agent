@@ -9,8 +9,7 @@ use cedar_local_agent::public::file::{entity_provider, policy_set_provider};
 use cedar_local_agent::public::log;
 use cedar_local_agent::public::log::event::{AuthorizerFormatter, AuthorizerTarget};
 use cedar_local_agent::public::simple::{Authorizer, AuthorizerConfigBuilder};
-use cedar_policy::{Context, Entities, Request};
-use cedar_policy_core::authorizer::Decision;
+use cedar_policy::{Context, Decision, Entities, Request};
 
 #[tokio::main]
 pub async fn main() {
@@ -152,22 +151,12 @@ pub async fn main() {
         Some("Action::\"read\"".to_string().parse().unwrap()),
         Some("Box::\"2\"".to_string().parse().unwrap()),
         Context::empty(),
-    );
+        None,
+    )
+    .unwrap();
 
-    let data = r#"[
-    {
-      "uid": {"type":"User","id":"Mike"},
-      "attrs": {
-        "age":19,
-        "ip_addr":{"__extn":{"fn":"ip", "arg":"10.0.1.101"}}
-      },
-      "parents": [
-        {"type":"Group","id":"admin"},
-        {"type":"Team", "id":"cedar"}
-        ]
-    }
-    ]"#;
-    let entities = Entities::from_json_str(data, None).unwrap();
+    // Entities are provided by `entity_provider` above; we don't need more
+    let entities = Entities::empty();
 
     /*
      * Send the cedar request to the authorizers and assert the result
