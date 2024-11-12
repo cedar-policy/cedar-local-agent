@@ -66,7 +66,7 @@ impl From<Entity> for EntityUidRepr {
     fn from(value: Entity) -> Self {
         EntityUidRepr {
             type_name: value.uid().type_name().to_string(),
-            id: value.uid().id().to_string(),
+            id: value.uid().to_string(),
         }
     }
 }

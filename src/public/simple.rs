@@ -322,9 +322,9 @@ mod test {
         let result = authorizer
             .is_authorized(
                 &Request::new(
-                    Some(r#"User::"Mike""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"10""#.parse().unwrap()),
+                    r#"User::"Mike""#.parse().unwrap(),
+                    r#"Action::"View""#.parse().unwrap(),
+                    r#"Box::"10""#.parse().unwrap(),
                     Context::empty(),
                     None,
                 )
@@ -363,9 +363,9 @@ mod test {
         let result = authorizer
             .is_authorized(
                 &Request::new(
-                    Some(r#"User::"Mike""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"2""#.parse().unwrap()),
+                    r#"User::"Mike""#.parse().unwrap(),
+                    r#"Action::"View""#.parse().unwrap(),
+                    r#"Box::"2""#.parse().unwrap(),
                     Context::empty(),
                     None,
                 )
@@ -404,9 +404,9 @@ mod test {
         let result = authorizer
             .is_authorized(
                 &Request::new(
-                    Some(r#"User::"Mike""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"3""#.parse().unwrap()),
+                    r#"User::"Mike""#.parse().unwrap(),
+                    r#"Action::"View""#.parse().unwrap(),
+                    r#"Box::"3""#.parse().unwrap(),
                     Context::empty(),
                     None,
                 )

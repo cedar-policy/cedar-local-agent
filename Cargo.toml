@@ -1,7 +1,7 @@
 [package]
 name = "cedar-local-agent"
 edition = "2021"
-version = "2.0.0"
+version = "3.0.0"
 license = "Apache-2.0"
 description = "Foundational library for creating Cedar-based asynchronous authorizers."
 keywords = ["cedar", "agent", "authorization", "policy", "security"]
@@ -33,10 +33,10 @@ tracing-core = "0.1.31"
 tracing-subscriber = "0.3.17"
 
 # Cedar
-cedar-policy = "3.1.0"
-cedar-policy-core = "3.1.0"
-cedar-policy-formatter = "3.1.0"
-cedar-policy-validator = "3.1.0"
+cedar-policy = "4.2.0"
+cedar-policy-core = "4.2.0"
+cedar-policy-formatter = "4.2.0"
+cedar-policy-validator = "4.2.0"
 
 [features]
 # Experimental features.
