@@ -20,7 +20,7 @@ use std::io::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use cedar_policy::{Entities, entities_errors::EntitiesError, Request, Schema};
+use cedar_policy::{entities_errors::EntitiesError, Entities, Request, Schema};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;

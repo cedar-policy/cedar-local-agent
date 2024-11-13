@@ -940,8 +940,8 @@ mod test {
     use std::str::FromStr;
 
     use cedar_policy::{
-        AuthorizationError, Context, Entities, EntityId, EntityTypeName, EntityUid,
-        EvaluationError, PolicyId, Request, Response, PolicySet, Authorizer
+        AuthorizationError, Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid,
+        EvaluationError, PolicyId, PolicySet, Request, Response,
     };
     use cedar_policy_core::ast::{PolicyID, RestrictedExpr, Value};
     use cedar_policy_core::authorizer::Decision;
@@ -1149,7 +1149,10 @@ mod test {
     #[test]
     fn build_ocsf_severity_multiple_errors() {
         assert_eq!(build_ocsf_severity(1), (SeverityId::Low, "Low".to_string()));
-        assert_eq!(build_ocsf_severity(4), (SeverityId::Medium, "Medium".to_string()));
+        assert_eq!(
+            build_ocsf_severity(4),
+            (SeverityId::Medium, "Medium".to_string())
+        );
     }
 
     #[test]
@@ -1431,14 +1434,7 @@ mod test {
             EntityTypeName::from_str("Photo").unwrap(),
             EntityId::from_str("vacation.jpg").unwrap(),
         );
-        Request::new(
-            principal,
-            action,
-            resource,
-            Context::empty(),
-            None,
-        )
-        .unwrap()
+        Request::new(principal, action, resource, Context::empty(), None).unwrap()
     }
 
     fn create_mock_entities() -> Entities {
