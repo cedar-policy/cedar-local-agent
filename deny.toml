@@ -1,12 +1,7 @@
 # This file defines configuration for the cargo deny command
 # Ref: https://github.com/EmbarkStudios/cargo-deny
-targets = []
 
 [advisories]
-vulnerability = "deny"
-unmaintained = "deny"
-notice = "deny"
-unsound = "deny"
 ignore = []
 
 [bans]
@@ -37,9 +32,6 @@ unknown-registry = "deny"
 unknown-git = "deny"
 
 [licenses]
-unlicensed = "deny"
-allow-osi-fsf-free = "neither"
-copyleft = "deny"
 confidence-threshold = 0.93
 allow = [
     "Apache-2.0",

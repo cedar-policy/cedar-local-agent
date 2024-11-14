@@ -31,8 +31,10 @@ const VENDOR_NAME: &str = "cedar::simple::authorizer";
 const SECRET_STRING: &str = "Sensitive<REDACTED>";
 
 /// A basic Open Cyber Security Framework structure
+///
 /// Entity Management events report activity. The activity can be a
 /// create, read, update, and delete operation on a managed entity.
+///
 /// <https://schema.ocsf.io/1.0.0/classes/entity_management?extensions=>
 #[derive(Default, Builder, Serialize, Deserialize, Eq, PartialEq, Debug, Clone)]
 #[builder(
@@ -53,7 +55,7 @@ pub struct OpenCyberSecurityFramework {
     /// The category unique identifier of the event. The authorization log will always be 3
     #[builder(default = "3u8")]
     pub category_uid: u8,
-    /// The event class name, as defined by class_uid value: `Entity Management`
+    /// The event class name, as defined by `class_uid` value: `Entity Management`
     #[builder(default = "Some(\"Entity Management\".to_string())")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub class_name: Option<String>,
@@ -69,7 +71,7 @@ pub struct OpenCyberSecurityFramework {
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub count: Option<u64>,
-    /// The event duration or aggregate time, the amount of time the event covers from start_time to end_time in milliseconds
+    /// The event duration or aggregate time, the amount of time the event covers from `start_time` to `end_time` in milliseconds
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<i64>,
@@ -105,7 +107,7 @@ pub struct OpenCyberSecurityFramework {
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub raw_data: Option<String>,
-    /// The event severity, normalized to the caption of the severity_id value
+    /// The event severity, normalized to the caption of the `severity_id` value
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
@@ -115,7 +117,7 @@ pub struct OpenCyberSecurityFramework {
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_time: Option<i64>,
-    /// The event status, normalized to the caption of the status_id value
+    /// The event status, normalized to the caption of the `status_id` value
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -137,9 +139,9 @@ pub struct OpenCyberSecurityFramework {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timezone_offset: Option<i32>,
     /// The event type ID. It identifies the event's semantics and structure.
-    /// the value is calculated by the logging system as: class_uid * 100 + activity_id
+    /// the value is calculated by the logging system as: `class_uid` * 100 + `activity_id`
     pub type_uid: TypeUid,
-    /// The event type name, as defined by the type_uid
+    /// The event type name, as defined by the `type_uid`
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub type_name: Option<String>,
@@ -548,9 +550,9 @@ pub enum ObservableTypeId {
     IPAddress = 2,
     /// Media Access Control (MAC) address. For example: 18:36:F3:98:4F:9A
     MACAddress = 3,
-    /// User name. For example: john_doe
+    /// User name. For example: `john_doe`
     UserName = 4,
-    /// Email address. For example: john_doe@example.com
+    /// Email address. For example: `john_doe@example.com`
     EmailAddress = 5,
     /// Uniform Resource Locator (URL) string
     URLString = 6,
@@ -564,7 +566,7 @@ pub enum ObservableTypeId {
     ResourceUID = 10,
     /// Endpoints, whether physical or virtual, connect to and interact with computer networks.
     /// Examples include mobile devices, computers, virtual machines, embedded devices, servers,
-    /// and IoT devices like cameras and smart speakers
+    /// and `IoT` devices like cameras and smart speakers
     Endpoint = 20,
     /// The User object describes the characteristics of a user/person or a security principal.
     /// Defined by D3FEND [d3f:UserAccount](https://d3fend.mitre.org/dao/artifact/d3f:UserAccount/)
@@ -691,7 +693,7 @@ pub struct Reputation {
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    /// The reputation score, normalized to the caption of the score_id value. In the case of 'Other',
+    /// The reputation score, normalized to the caption of the `score_id` value. In the case of 'Other',
     /// it is defined by the event source
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -835,6 +837,7 @@ pub struct Product {
 
 /// Encompasses details related to the capabilities, components, user interface (UI) design,
 /// and performance upgrades associated with the feature.
+///
 /// <https://schema.ocsf.io/1.0.0/objects/feature?extensions=>
 #[derive(Default, Serialize, Deserialize, Builder, Eq, PartialEq, Debug, Clone)]
 #[builder(setter(into))]
@@ -882,12 +885,12 @@ struct FilteredRequest {
 /// authorization decision.
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub(crate) enum EntityComponent {
-    /// A concrete EntityUID
+    /// A concrete `EntityUID`
     Concrete(EntityUid),
     /// An entity that is not specified / concrete.
     Unspecified,
     #[default]
-    /// No EntityUID because it was filtered out.
+    /// No `EntityUID` because it was filtered out.
     None,
 }
 
@@ -935,15 +938,12 @@ impl From<Option<EntityUid>> for EntityComponent {
 
 #[cfg(test)]
 mod test {
-    use core::num;
     use std::collections::{HashMap, HashSet};
     use std::str::FromStr;
 
     use cedar_policy::{
-        AuthorizationError, Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid,
-        EvaluationError, PolicyId, PolicySet, Request, Response,
+        Context, Entities, EntityId, EntityTypeName, EntityUid, PolicyId, Request, Response,
     };
-    use cedar_policy_core::ast::{PolicyID, RestrictedExpr, Value};
     use cedar_policy_core::authorizer::Decision;
     use serde_json::{from_str, to_string, to_value, Map};
 
@@ -1088,7 +1088,7 @@ mod test {
         //         }),
         //     })
         //     .collect();
-
+        println!("Number of errors needed: {}", { num_of_error });
         // Uses a empty vector now instead of giving num_of_error errors. Tests have been changed to reflect this
         // Leads to problems in test coverage
         Response::new(decision, policy_ids, vec![])

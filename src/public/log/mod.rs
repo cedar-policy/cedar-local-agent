@@ -16,7 +16,7 @@ pub const DEFAULT_REQUESTER_NAME: &str = "cedar::simple::authorizer";
 #[builder(setter(into))]
 pub struct Config {
     /// `format` is used to specify the log rotation format.
-    /// By default the log rotation format is OpenCyberSecurityFramework (OCSF).
+    /// By default the log rotation format is `OpenCyberSecurityFramework` (OCSF).
     #[builder(default)]
     pub format: Format,
 
