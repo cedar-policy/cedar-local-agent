@@ -4,7 +4,7 @@ use std::sync::Arc;
 use cedar_policy::{Entities, Request, Response};
 #[cfg(feature = "partial-eval")]
 use cedar_policy::{
-    PartialResponse, PartialResponse::Concrete, PartialResponse::Residual, ResidualResponse,
+    PartialResponse,
 };
 use derive_builder::Builder;
 use thiserror::Error;
