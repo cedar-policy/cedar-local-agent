@@ -550,9 +550,9 @@ pub enum ObservableTypeId {
     IPAddress = 2,
     /// Media Access Control (MAC) address. For example: 18:36:F3:98:4F:9A
     MACAddress = 3,
-    /// User name. For example: `john_doe`
+    /// User name. For example: john\_doe
     UserName = 4,
-    /// Email address. For example: `john_doe@example.com`
+    /// Email address. For example: john\_doe@example.com
     EmailAddress = 5,
     /// Uniform Resource Locator (URL) string
     URLString = 6,
@@ -942,7 +942,8 @@ mod test {
     use std::str::FromStr;
 
     use cedar_policy::{
-        Context, Entities, EntityId, EntityTypeName, EntityUid, PolicyId, Request, Response,
+        AuthorizationError, Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid,
+        PolicyId, PolicySet, Request, Response,
     };
     use cedar_policy_core::authorizer::Decision;
     use serde_json::{from_str, to_string, to_value, Map};
@@ -1078,20 +1079,31 @@ mod test {
         policy_ids.insert(PolicyId::from_str("policy1").unwrap());
         policy_ids.insert(PolicyId::from_str("policy2").unwrap());
 
-        // Old code - no longer works
-        // let errors = (0..num_of_error)
-        //     .map(|i| AuthorizationError::PolicyEvaluationError {
-        //         id: PolicyID::from_string(format!("policy{i}")),
-        //         error: EvaluationError::from(RestrictedExpr::InvalidRestrictedExpression {
-        //             feature: Default::default(),
-        //             expr: Value::from(true).into(),
-        //         }),
-        //     })
-        //     .collect();
-        println!("Number of errors needed: {}", { num_of_error });
-        // Uses a empty vector now instead of giving num_of_error errors. Tests have been changed to reflect this
-        // Leads to problems in test coverage
-        Response::new(decision, policy_ids, vec![])
+        let authorizer = Authorizer::new();
+        let policy_set = PolicySet::from_str(
+            r"permit(
+            principal,
+            action,
+            resource
+            ) when {
+                resource.admins.contains(principal)
+            };",
+        )
+        .unwrap();
+
+        let euid_type = EntityTypeName::from_str("Veris::User").unwrap();
+        let euid_id = EntityId::from_str("test").unwrap();
+        let euid = EntityUid::from_type_name_and_id(euid_type, euid_id);
+
+        let request =
+            Request::new(euid.clone(), euid.clone(), euid, Context::empty(), None).unwrap();
+
+        let auth_res = authorizer.is_authorized(&request, &policy_set, &Entities::empty());
+        let auth_err = auth_res.diagnostics().errors().next().unwrap();
+
+        let errors: Vec<AuthorizationError> = (0..num_of_error).map(|_| auth_err.clone()).collect();
+
+        Response::new(decision, policy_ids, errors)
     }
 
     #[test]
@@ -1127,8 +1139,8 @@ mod test {
         );
         assert!(ocsf.is_ok());
         let ocsf_log = ocsf.unwrap();
-        assert_eq!(ocsf_log.severity_id, SeverityId::Informational);
-        assert_eq!(ocsf_log.status.unwrap(), "Success".to_string());
+        assert_eq!(ocsf_log.severity_id, SeverityId::Low);
+        assert_eq!(ocsf_log.status.unwrap(), "Failure".to_string());
 
         let response = generate_response(2, Decision::Deny);
         let ocsf = OpenCyberSecurityFramework::create(
@@ -1141,8 +1153,8 @@ mod test {
 
         assert!(ocsf.is_ok());
         let ocsf_log = ocsf.unwrap();
-        assert_eq!(ocsf_log.severity_id, SeverityId::Informational);
-        assert_eq!(ocsf_log.status.unwrap(), "Success".to_string());
+        assert_eq!(ocsf_log.severity_id, SeverityId::Medium);
+        assert_eq!(ocsf_log.status.unwrap(), "Failure".to_string());
         assert_eq!(ocsf_log.status_code.unwrap(), "Deny".to_string());
     }
 

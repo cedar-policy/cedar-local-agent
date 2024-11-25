@@ -218,10 +218,7 @@ where
 
         // Skip logging for now
         info!("Generated OCSF log record.");
-        // match &partial_response {
-        //     Concrete(response) => self.log(request, response, entities),
-        //     Residual(residual_response) => self.log_residual(request, residual_response, entities),
-        // };
+
         match partial_response.decision() {
             Some(_) => self.log(request, &concrete_response, entities),
             None => self.log_residual(
@@ -249,7 +246,6 @@ where
     fn log_residual(
         &self,
         request: &Request,
-        // residual_response: &ResidualResponse,
         diagnostics: &Diagnostics,
         policies: &PartialResponse,
         entities: &Entities,
@@ -258,9 +254,7 @@ where
             serde_json::to_string(
                 &OpenCyberSecurityFramework::create_generic(
                     request,
-                    //residual_response.diagnostics(),
                     diagnostics,
-                    // residual_response.residuals().policies()
                     policies.all_residuals()
                         .map(|policy| format!("{}", policy.id()))
                         .collect::<Vec<String>>()

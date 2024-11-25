@@ -1,7 +1,7 @@
 [package]
 name = "cedar-local-agent"
 edition = "2021"
-version = "3.0.0"
+version = "2.0.0"
 license = "Apache-2.0"
 description = "Foundational library for creating Cedar-based asynchronous authorizers."
 keywords = ["cedar", "agent", "authorization", "policy", "security"]
@@ -13,7 +13,6 @@ bench = false
 [dependencies]
 # Utilities
 async-trait = "0.1.71"
-bytemuck = "1.20.0"
 chrono = "0.4.26"
 derive_builder = "0.12.0"
 futures = { version = "0.3.31", features = ["std"] }
@@ -24,7 +23,6 @@ serde = { version = "1.0.166", features = ["derive"] }
 serde_json = "1.0.100"
 serde_repr = "0.1.16"
 sha256 = "1.3.0"
-smol_str = "0.3.2"
 tokio = { version = "1.0", features = ["full", "signal", "sync", "parking_lot"] }
 uuid = { version = "1.4.1", features = ["v4"] }
 

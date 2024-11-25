@@ -1,5 +1,7 @@
 # This file defines configuration for the cargo deny command
 # Ref: https://github.com/EmbarkStudios/cargo-deny
+[graph]
+targets = []
 
 [advisories]
 ignore = []
