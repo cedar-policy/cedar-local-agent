@@ -168,7 +168,7 @@ impl OpenCyberSecurityFramework {
         authorizer_name: &str,
     ) -> Result<Self, OcsfException> {
         let decision = response.decision();
-        return Self::create_generic(
+        Self::create_generic(
             request,
             response.diagnostics(),
             format!("decision is {decision:?}").as_str(),
@@ -176,7 +176,7 @@ impl OpenCyberSecurityFramework {
             entities,
             fields,
             authorizer_name,
-        );
+        )
     }
 
     /// Converts Request, Entities, Field Set into a filtered OCSF log.
@@ -252,12 +252,16 @@ impl OpenCyberSecurityFramework {
 
         let (severity_id, severity) = build_ocsf_severity(response_error.len());
 
-        let source_entity =
-            generate_managed_entity(&filtered_request.entities, &filtered_request.principal)?;
-        let resource_entity =
-            generate_managed_entity(&filtered_request.entities, &filtered_request.resource)?;
+        let source_entity = generate_managed_entity(
+            filtered_request.entities.as_ref(),
+            &filtered_request.principal,
+        )?;
+        let resource_entity = generate_managed_entity(
+            filtered_request.entities.as_ref(),
+            &filtered_request.resource,
+        )?;
         let action_entity =
-            generate_managed_entity(&filtered_request.entities, &filtered_request.action)?;
+            generate_managed_entity(filtered_request.entities.as_ref(), &filtered_request.action)?;
         unmapped.insert(
             "action_entity_details".to_string(),
             to_value(action_entity)?,
@@ -306,7 +310,7 @@ impl OpenCyberSecurityFramework {
             .build()
             .unwrap_or_default();
 
-        return OpenCyberSecurityFrameworkBuilder::default()
+        OpenCyberSecurityFrameworkBuilder::default()
             .type_uid(TypeUid::Other)
             .severity_id(SeverityId::Other)
             .metadata(
@@ -326,7 +330,7 @@ impl OpenCyberSecurityFramework {
             .activity_id(ActivityId::Other)
             .message(error_message)
             .build()
-            .unwrap_or_default();
+            .unwrap_or_default()
     }
 }
 
@@ -360,7 +364,7 @@ fn filter_request(request: &Request, entities: &Entities, fields: &FieldSet) -> 
 }
 
 fn generate_managed_entity(
-    entities: &Option<Entities>,
+    entities: Option<&Entities>,
     component: &EntityComponent,
 ) -> Result<ManagedEntity, OcsfException> {
     // The map contains the useful information of entity. For now, it only contains the ancestors
@@ -550,9 +554,11 @@ pub enum ObservableTypeId {
     IPAddress = 2,
     /// Media Access Control (MAC) address. For example: 18:36:F3:98:4F:9A
     MACAddress = 3,
-    /// User name. For example: john\_doe
+    #[allow(clippy::doc_markdown)]
+    /// User name. For example: john_doe
     UserName = 4,
-    /// Email address. For example: john\_doe@example.com
+    #[allow(clippy::doc_markdown)]
+    /// Email address. For example: john_doe@example.com
     EmailAddress = 5,
     /// Uniform Resource Locator (URL) string
     URLString = 6,
@@ -962,7 +968,7 @@ mod test {
     use super::build_ocsf_severity;
 
     fn generate_metadata() -> MetaData {
-        return MetaDataBuilder::default()
+        MetaDataBuilder::default()
             .version("1.0.0")
             .product(
                 ProductBuilder::default()
@@ -971,20 +977,20 @@ mod test {
                     .unwrap(),
             )
             .build()
-            .unwrap();
+            .unwrap()
     }
 
     fn generate_entity(entity_type: String, name: String) -> ManagedEntity {
-        return ManagedEntityBuilder::default()
+        ManagedEntityBuilder::default()
             .version("1.0.0".to_string())
             .entity_type(entity_type)
             .name(name)
             .build()
-            .unwrap();
+            .unwrap()
     }
 
     fn generate_default_ocsf_model() -> OpenCyberSecurityFramework {
-        return OpenCyberSecurityFrameworkBuilder::default()
+        OpenCyberSecurityFrameworkBuilder::default()
             .type_uid(TypeUid::Read)
             .severity_id(SeverityId::Unknown)
             .metadata(generate_metadata())
@@ -992,7 +998,7 @@ mod test {
             .entity(generate_entity("user".to_string(), "alice".to_string()))
             .activity_id(ActivityId::Read)
             .build()
-            .unwrap();
+            .unwrap()
     }
 
     fn generate_validation_error() -> Result<OpenCyberSecurityFramework, OcsfException> {
