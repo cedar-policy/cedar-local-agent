@@ -20,7 +20,7 @@ use std::io::Error;
 use std::sync::Arc;
 
 use async_trait::async_trait;
-use cedar_policy::{Entities, EntitiesError, Request, Schema};
+use cedar_policy::{entities_errors::EntitiesError, Entities, Request, Schema};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::sync::RwLock;
@@ -172,7 +172,7 @@ impl EntityProvider {
 
             let entities = if let Some(schema_path) = configuration.schema_path.as_ref() {
                 let schema_file = File::open(schema_path)?;
-                let schema = Schema::from_file(schema_file)
+                let schema = Schema::from_json_file(schema_file)
                     .map_err(|_schema_error| SchemaParseErrorWrapper::new(schema_path.clone()))?;
                 let res = Entities::from_json_file(entities_file, Some(&schema)).map_err(
                     |entities_error| {
@@ -227,7 +227,7 @@ impl UpdateProviderData for EntityProvider {
                 let schema_file = File::open(schema_path).map_err(|e| {
                     UpdateProviderDataError::General(Box::new(ProviderError::IOError(e)))
                 })?;
-                let schema = Schema::from_file(schema_file).map_err(|_| {
+                let schema = Schema::from_json_file(schema_file).map_err(|_| {
                     UpdateProviderDataError::General(Box::new(ProviderError::SchemaParseError(
                         schema_path.to_string(),
                     )))
@@ -335,9 +335,9 @@ mod test {
             .unwrap()
             .get_entities(
                 &Request::new(
-                    Some(r#"User::"Eric""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"10""#.parse().unwrap()),
+                    r#"User::"Eric""#.parse().unwrap(),
+                    r#"Action::"View""#.parse().unwrap(),
+                    r#"Box::"10""#.parse().unwrap(),
                     Context::empty(),
                     None,
                 )

@@ -1,11 +1,9 @@
 //! Provides a simple authorizer that takes a `SimplePolicySetProvider` and a `SimpleEntityProvider`.
 use std::sync::Arc;
 
-use cedar_policy::{Entities, Request, Response};
 #[cfg(feature = "partial-eval")]
-use cedar_policy::{
-    PartialResponse, PartialResponse::Concrete, PartialResponse::Residual, ResidualResponse,
-};
+use cedar_policy::{Diagnostics, PartialResponse};
+use cedar_policy::{Entities, Request, Response};
 use derive_builder::Builder;
 use thiserror::Error;
 use tokio::join;
@@ -216,26 +214,28 @@ where
         );
         info!("Fetched Authorization data from Policy Set Provider and Entity Provider");
 
+        let concrete_response = partial_response.clone().concretize();
+
         // Skip logging for now
         info!("Generated OCSF log record.");
-        match &partial_response {
-            Concrete(response) => self.log(request, response, entities),
-            Residual(residual_response) => self.log_residual(request, residual_response, entities),
-        };
+
+        match partial_response.decision() {
+            Some(_) => self.log(request, &concrete_response, entities),
+            None => self.log_residual(
+                request,
+                concrete_response.diagnostics(),
+                &partial_response,
+                entities,
+            ),
+        }
 
         info!(
-            "Is_authorized_partial completed: response_decision={}",
-            match &partial_response {
-                Concrete(response) => format!("{:?}", response.decision()),
-                Residual(residual_response) => format!("{:?}", residual_response.residuals()),
-            }
+            "Is_authorized_partial completed: response_decision={:?}",
+            partial_response.decision()
         );
         debug!(
             "This decision was reached because: response_diagnostics={:?}",
-            match &partial_response {
-                Concrete(response) => response.diagnostics(),
-                Residual(residual_response) => residual_response.diagnostics(),
-            }
+            partial_response.clone().concretize().diagnostics()
         );
 
         Ok(partial_response)
@@ -246,19 +246,21 @@ where
     fn log_residual(
         &self,
         request: &Request,
-        residual_response: &ResidualResponse,
+        diagnostics: &Diagnostics,
+        policies: &PartialResponse,
         entities: &Entities,
     ) {
         event!(target: "cedar::simple::authorizer", Level::INFO, "{}",
             serde_json::to_string(
                 &OpenCyberSecurityFramework::create_generic(
                     request,
-                    residual_response.diagnostics(),
-                    residual_response.residuals().policies()
+                    diagnostics,
+                    policies.all_residuals()
                         .map(|policy| format!("{}", policy.id()))
                         .collect::<Vec<String>>()
                         .join(", ")
                         .as_str(),
+
                     String::from("Residuals"),
                     entities,
                     &self.log_config.field_set,
@@ -322,9 +324,9 @@ mod test {
         let result = authorizer
             .is_authorized(
                 &Request::new(
-                    Some(r#"User::"Mike""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"10""#.parse().unwrap()),
+                    r#"User::"Mike""#.parse().unwrap(),
+                    r#"Action::"View""#.parse().unwrap(),
+                    r#"Box::"10""#.parse().unwrap(),
                     Context::empty(),
                     None,
                 )
@@ -363,9 +365,9 @@ mod test {
         let result = authorizer
             .is_authorized(
                 &Request::new(
-                    Some(r#"User::"Mike""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"2""#.parse().unwrap()),
+                    r#"User::"Mike""#.parse().unwrap(),
+                    r#"Action::"View""#.parse().unwrap(),
+                    r#"Box::"2""#.parse().unwrap(),
                     Context::empty(),
                     None,
                 )
@@ -404,9 +406,9 @@ mod test {
         let result = authorizer
             .is_authorized(
                 &Request::new(
-                    Some(r#"User::"Mike""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"3""#.parse().unwrap()),
+                    r#"User::"Mike""#.parse().unwrap(),
+                    r#"Action::"View""#.parse().unwrap(),
+                    r#"Box::"3""#.parse().unwrap(),
                     Context::empty(),
                     None,
                 )
@@ -425,7 +427,7 @@ mod test_partial {
     use std::sync::Arc;
 
     use async_trait::async_trait;
-    use cedar_policy::{Context, Entities, PartialResponse, Policy, PolicySet, Request};
+    use cedar_policy::{Context, Entities, Policy, PolicyId, PolicySet, Request};
     use cedar_policy_core::authorizer::Decision;
     use cool_asserts::assert_matches;
 
@@ -447,8 +449,8 @@ mod test_partial {
         let result = authorizer
             .is_authorized_partial(
                 &Request::builder()
-                    .principal(Some(r#"User::"Mike""#.parse().unwrap()))
-                    .action(Some(r#"Action::"View""#.parse().unwrap()))
+                    .principal(r#"User::"Mike""#.parse().unwrap())
+                    .action(r#"Action::"View""#.parse().unwrap())
                     .context(Context::empty())
                     .build(),
                 &Entities::empty(),
@@ -456,9 +458,7 @@ mod test_partial {
             .await;
 
         assert_matches!(result, Ok(partial_response) =>
-            assert_matches!(partial_response, PartialResponse::Concrete(response) =>
-                assert_eq!(response.decision(), Decision::Deny)
-            )
+            assert_eq!(partial_response.decision(), Some(Decision::Deny))
         );
         assert_eq!(authorizer.log_config.requester, DEFAULT_REQUESTER_NAME);
         assert!(!authorizer.log_config.field_set.principal);
@@ -477,8 +477,8 @@ mod test_partial {
         let result = authorizer
             .is_authorized_partial(
                 &Request::builder()
-                    .action(Some(r#"Action::"View""#.parse().unwrap()))
-                    .resource(Some(r#"Box::"10""#.parse().unwrap()))
+                    .action(r#"Action::"View""#.parse().unwrap())
+                    .resource(r#"Box::"10""#.parse().unwrap())
                     .context(Context::empty())
                     .build(),
                 &Entities::empty(),
@@ -486,9 +486,7 @@ mod test_partial {
             .await;
 
         assert_matches!(result, Ok(partial_response) =>
-            assert_matches!(partial_response, PartialResponse::Concrete(response) =>
-                assert_eq!(response.decision(), Decision::Deny)
-            )
+            assert_eq!(partial_response.decision(), Some(Decision::Deny))
         );
         assert_eq!(authorizer.log_config.requester, DEFAULT_REQUESTER_NAME);
         assert!(!authorizer.log_config.field_set.principal);
@@ -504,7 +502,7 @@ mod test_partial {
             _: &Request,
         ) -> Result<Arc<PolicySet>, PolicySetProviderError> {
             let policy = Policy::parse(
-                Some("test".into()),
+                Some(PolicyId::new("test")),
                 r#"permit(principal == User::"Mike", action, resource == Box::"10");"#,
             )
             .expect("Failed to parse");
@@ -528,8 +526,8 @@ mod test_partial {
         let result = authorizer
             .is_authorized_partial(
                 &Request::builder()
-                    .action(Some(r#"Action::"View""#.parse().unwrap()))
-                    .resource(Some(r#"Box::"10""#.parse().unwrap()))
+                    .action(r#"Action::"View""#.parse().unwrap())
+                    .resource(r#"Box::"10""#.parse().unwrap())
                     .context(Context::empty())
                     .build(),
                 &Entities::empty(),
@@ -537,9 +535,7 @@ mod test_partial {
             .await;
 
         assert_matches!(result, Ok(partial_response) =>
-            assert_matches!(partial_response, PartialResponse::Residual(residual_response) => {
-                assert_eq!(residual_response.residuals().policies().count(), 1);
-            })
+            assert_eq!(partial_response.all_residuals().count(), 1)
         );
         assert_eq!(authorizer.log_config.requester, DEFAULT_REQUESTER_NAME);
         assert!(!authorizer.log_config.field_set.principal);

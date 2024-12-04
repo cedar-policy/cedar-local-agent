@@ -10,9 +10,9 @@ use std::sync::Arc;
 
 fn construct_request() -> Request {
     Request::new(
-        Some("Principal::\"request\"".parse().unwrap()),
-        Some("Action::\"request\"".parse().unwrap()),
-        Some("Resource::\"request\"".parse().unwrap()),
+        "Principal::\"request\"".parse().unwrap(),
+        "Action::\"request\"".parse().unwrap(),
+        "Resource::\"request\"".parse().unwrap(),
         Context::empty(),
         None,
     )

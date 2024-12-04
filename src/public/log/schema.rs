@@ -31,8 +31,10 @@ const VENDOR_NAME: &str = "cedar::simple::authorizer";
 const SECRET_STRING: &str = "Sensitive<REDACTED>";
 
 /// A basic Open Cyber Security Framework structure
+///
 /// Entity Management events report activity. The activity can be a
 /// create, read, update, and delete operation on a managed entity.
+///
 /// <https://schema.ocsf.io/1.0.0/classes/entity_management?extensions=>
 #[derive(Default, Builder, Serialize, Deserialize, Eq, PartialEq, Debug, Clone)]
 #[builder(
@@ -53,7 +55,7 @@ pub struct OpenCyberSecurityFramework {
     /// The category unique identifier of the event. The authorization log will always be 3
     #[builder(default = "3u8")]
     pub category_uid: u8,
-    /// The event class name, as defined by class_uid value: `Entity Management`
+    /// The event class name, as defined by `class_uid` value: `Entity Management`
     #[builder(default = "Some(\"Entity Management\".to_string())")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub class_name: Option<String>,
@@ -69,7 +71,7 @@ pub struct OpenCyberSecurityFramework {
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub count: Option<u64>,
-    /// The event duration or aggregate time, the amount of time the event covers from start_time to end_time in milliseconds
+    /// The event duration or aggregate time, the amount of time the event covers from `start_time` to `end_time` in milliseconds
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub duration: Option<i64>,
@@ -105,7 +107,7 @@ pub struct OpenCyberSecurityFramework {
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub raw_data: Option<String>,
-    /// The event severity, normalized to the caption of the severity_id value
+    /// The event severity, normalized to the caption of the `severity_id` value
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub severity: Option<String>,
@@ -115,7 +117,7 @@ pub struct OpenCyberSecurityFramework {
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub start_time: Option<i64>,
-    /// The event status, normalized to the caption of the status_id value
+    /// The event status, normalized to the caption of the `status_id` value
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
@@ -137,9 +139,9 @@ pub struct OpenCyberSecurityFramework {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub timezone_offset: Option<i32>,
     /// The event type ID. It identifies the event's semantics and structure.
-    /// the value is calculated by the logging system as: class_uid * 100 + activity_id
+    /// the value is calculated by the logging system as: `class_uid` * 100 + `activity_id`
     pub type_uid: TypeUid,
-    /// The event type name, as defined by the type_uid
+    /// The event type name, as defined by the `type_uid`
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub type_name: Option<String>,
@@ -166,7 +168,7 @@ impl OpenCyberSecurityFramework {
         authorizer_name: &str,
     ) -> Result<Self, OcsfException> {
         let decision = response.decision();
-        return Self::create_generic(
+        Self::create_generic(
             request,
             response.diagnostics(),
             format!("decision is {decision:?}").as_str(),
@@ -174,7 +176,7 @@ impl OpenCyberSecurityFramework {
             entities,
             fields,
             authorizer_name,
-        );
+        )
     }
 
     /// Converts Request, Entities, Field Set into a filtered OCSF log.
@@ -250,12 +252,16 @@ impl OpenCyberSecurityFramework {
 
         let (severity_id, severity) = build_ocsf_severity(response_error.len());
 
-        let source_entity =
-            generate_managed_entity(&filtered_request.entities, &filtered_request.principal)?;
-        let resource_entity =
-            generate_managed_entity(&filtered_request.entities, &filtered_request.resource)?;
+        let source_entity = generate_managed_entity(
+            filtered_request.entities.as_ref(),
+            &filtered_request.principal,
+        )?;
+        let resource_entity = generate_managed_entity(
+            filtered_request.entities.as_ref(),
+            &filtered_request.resource,
+        )?;
         let action_entity =
-            generate_managed_entity(&filtered_request.entities, &filtered_request.action)?;
+            generate_managed_entity(filtered_request.entities.as_ref(), &filtered_request.action)?;
         unmapped.insert(
             "action_entity_details".to_string(),
             to_value(action_entity)?,
@@ -304,7 +310,7 @@ impl OpenCyberSecurityFramework {
             .build()
             .unwrap_or_default();
 
-        return OpenCyberSecurityFrameworkBuilder::default()
+        OpenCyberSecurityFrameworkBuilder::default()
             .type_uid(TypeUid::Other)
             .severity_id(SeverityId::Other)
             .metadata(
@@ -324,7 +330,7 @@ impl OpenCyberSecurityFramework {
             .activity_id(ActivityId::Other)
             .message(error_message)
             .build()
-            .unwrap_or_default();
+            .unwrap_or_default()
     }
 }
 
@@ -358,7 +364,7 @@ fn filter_request(request: &Request, entities: &Entities, fields: &FieldSet) -> 
 }
 
 fn generate_managed_entity(
-    entities: &Option<Entities>,
+    entities: Option<&Entities>,
     component: &EntityComponent,
 ) -> Result<ManagedEntity, OcsfException> {
     // The map contains the useful information of entity. For now, it only contains the ancestors
@@ -548,8 +554,10 @@ pub enum ObservableTypeId {
     IPAddress = 2,
     /// Media Access Control (MAC) address. For example: 18:36:F3:98:4F:9A
     MACAddress = 3,
+    #[allow(clippy::doc_markdown)]
     /// User name. For example: john_doe
     UserName = 4,
+    #[allow(clippy::doc_markdown)]
     /// Email address. For example: john_doe@example.com
     EmailAddress = 5,
     /// Uniform Resource Locator (URL) string
@@ -564,7 +572,7 @@ pub enum ObservableTypeId {
     ResourceUID = 10,
     /// Endpoints, whether physical or virtual, connect to and interact with computer networks.
     /// Examples include mobile devices, computers, virtual machines, embedded devices, servers,
-    /// and IoT devices like cameras and smart speakers
+    /// and `IoT` devices like cameras and smart speakers
     Endpoint = 20,
     /// The User object describes the characteristics of a user/person or a security principal.
     /// Defined by D3FEND [d3f:UserAccount](https://d3fend.mitre.org/dao/artifact/d3f:UserAccount/)
@@ -691,7 +699,7 @@ pub struct Reputation {
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-    /// The reputation score, normalized to the caption of the score_id value. In the case of 'Other',
+    /// The reputation score, normalized to the caption of the `score_id` value. In the case of 'Other',
     /// it is defined by the event source
     #[builder(default)]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -835,6 +843,7 @@ pub struct Product {
 
 /// Encompasses details related to the capabilities, components, user interface (UI) design,
 /// and performance upgrades associated with the feature.
+///
 /// <https://schema.ocsf.io/1.0.0/objects/feature?extensions=>
 #[derive(Default, Serialize, Deserialize, Builder, Eq, PartialEq, Debug, Clone)]
 #[builder(setter(into))]
@@ -882,12 +891,12 @@ struct FilteredRequest {
 /// authorization decision.
 #[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub(crate) enum EntityComponent {
-    /// A concrete EntityUID
+    /// A concrete `EntityUID`
     Concrete(EntityUid),
     /// An entity that is not specified / concrete.
     Unspecified,
     #[default]
-    /// No EntityUID because it was filtered out.
+    /// No `EntityUID` because it was filtered out.
     None,
 }
 
@@ -895,7 +904,7 @@ impl Display for EntityComponent {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Concrete(euid) => {
-                write!(f, "{}", euid.id())
+                write!(f, "{}", euid.id().escaped())
             }
             Self::None => {
                 write!(f, "{SECRET_STRING}")
@@ -920,7 +929,7 @@ impl EntityComponent {
     /// Gets the Id of the component.
     pub fn get_id(&self) -> String {
         match self {
-            Self::Concrete(euid) => euid.id().to_string(),
+            Self::Concrete(euid) => euid.to_string(),
             Self::None => SECRET_STRING.to_string(),
             Self::Unspecified => "*".to_string(),
         }
@@ -939,10 +948,9 @@ mod test {
     use std::str::FromStr;
 
     use cedar_policy::{
-        AuthorizationError, Context, Entities, EntityId, EntityTypeName, EntityUid,
-        EvaluationError, PolicyId, Request, Response,
+        AuthorizationError, Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid,
+        PolicyId, PolicySet, Request, Response,
     };
-    use cedar_policy_core::ast::{PolicyID, RestrictedExprError, Value};
     use cedar_policy_core::authorizer::Decision;
     use serde_json::{from_str, to_string, to_value, Map};
 
@@ -957,8 +965,10 @@ mod test {
     };
     use crate::public::log::{FieldLevel, FieldSet, FieldSetBuilder};
 
+    use super::build_ocsf_severity;
+
     fn generate_metadata() -> MetaData {
-        return MetaDataBuilder::default()
+        MetaDataBuilder::default()
             .version("1.0.0")
             .product(
                 ProductBuilder::default()
@@ -967,20 +977,20 @@ mod test {
                     .unwrap(),
             )
             .build()
-            .unwrap();
+            .unwrap()
     }
 
     fn generate_entity(entity_type: String, name: String) -> ManagedEntity {
-        return ManagedEntityBuilder::default()
+        ManagedEntityBuilder::default()
             .version("1.0.0".to_string())
             .entity_type(entity_type)
             .name(name)
             .build()
-            .unwrap();
+            .unwrap()
     }
 
     fn generate_default_ocsf_model() -> OpenCyberSecurityFramework {
-        return OpenCyberSecurityFrameworkBuilder::default()
+        OpenCyberSecurityFrameworkBuilder::default()
             .type_uid(TypeUid::Read)
             .severity_id(SeverityId::Unknown)
             .metadata(generate_metadata())
@@ -988,7 +998,7 @@ mod test {
             .entity(generate_entity("user".to_string(), "alice".to_string()))
             .activity_id(ActivityId::Read)
             .build()
-            .unwrap();
+            .unwrap()
     }
 
     fn generate_validation_error() -> Result<OpenCyberSecurityFramework, OcsfException> {
@@ -1011,9 +1021,9 @@ mod test {
     }
 
     fn generate_mock_request(principal_name: &str) -> Request {
-        let principal = Some(generate_entity_uid(principal_name));
-        let action = Some(generate_entity_uid("read"));
-        let resource = Some(generate_entity_uid("Box"));
+        let principal = generate_entity_uid(principal_name);
+        let action = generate_entity_uid("read");
+        let resource = generate_entity_uid("Box");
 
         Request::new(principal, action, resource, Context::empty(), None).unwrap()
     }
@@ -1075,15 +1085,29 @@ mod test {
         policy_ids.insert(PolicyId::from_str("policy1").unwrap());
         policy_ids.insert(PolicyId::from_str("policy2").unwrap());
 
-        let errors = (0..num_of_error)
-            .map(|i| AuthorizationError::PolicyEvaluationError {
-                id: PolicyID::from_string(format!("policy{i}")),
-                error: EvaluationError::from(RestrictedExprError::InvalidRestrictedExpression {
-                    feature: Default::default(),
-                    expr: Value::from(true).into(),
-                }),
-            })
-            .collect();
+        let authorizer = Authorizer::new();
+        let policy_set = PolicySet::from_str(
+            r"permit(
+            principal,
+            action,
+            resource
+            ) when {
+                resource.admins.contains(principal)
+            };",
+        )
+        .unwrap();
+
+        let euid_type = EntityTypeName::from_str("Veris::User").unwrap();
+        let euid_id = EntityId::from_str("test").unwrap();
+        let euid = EntityUid::from_type_name_and_id(euid_type, euid_id);
+
+        let request =
+            Request::new(euid.clone(), euid.clone(), euid, Context::empty(), None).unwrap();
+
+        let auth_res = authorizer.is_authorized(&request, &policy_set, &Entities::empty());
+        let auth_err = auth_res.diagnostics().errors().next().unwrap();
+
+        let errors: Vec<AuthorizationError> = (0..num_of_error).map(|_| auth_err.clone()).collect();
 
         Response::new(decision, policy_ids, errors)
     }
@@ -1138,6 +1162,15 @@ mod test {
         assert_eq!(ocsf_log.severity_id, SeverityId::Medium);
         assert_eq!(ocsf_log.status.unwrap(), "Failure".to_string());
         assert_eq!(ocsf_log.status_code.unwrap(), "Deny".to_string());
+    }
+
+    #[test]
+    fn build_ocsf_severity_multiple_errors() {
+        assert_eq!(build_ocsf_severity(1), (SeverityId::Low, "Low".to_string()));
+        assert_eq!(
+            build_ocsf_severity(4),
+            (SeverityId::Medium, "Medium".to_string())
+        );
     }
 
     #[test]
@@ -1419,14 +1452,7 @@ mod test {
             EntityTypeName::from_str("Photo").unwrap(),
             EntityId::from_str("vacation.jpg").unwrap(),
         );
-        Request::new(
-            Some(principal),
-            Some(action),
-            Some(resource),
-            Context::empty(),
-            None,
-        )
-        .unwrap()
+        Request::new(principal, action, resource, Context::empty(), None).unwrap()
     }
 
     fn create_mock_entities() -> Entities {

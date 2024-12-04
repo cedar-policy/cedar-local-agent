@@ -269,9 +269,9 @@ mod test {
             .unwrap()
             .get_policy_set(
                 &Request::new(
-                    Some(r#"User::"Adam""#.parse().unwrap()),
-                    Some(r#"Action::"View""#.parse().unwrap()),
-                    Some(r#"Box::"10""#.parse().unwrap()),
+                    r#"User::"Adam""#.parse().unwrap(),
+                    r#"Action::"View""#.parse().unwrap(),
+                    r#"Box::"10""#.parse().unwrap(),
                     Context::empty(),
                     None,
                 )
