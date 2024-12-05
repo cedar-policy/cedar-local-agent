@@ -48,7 +48,7 @@ partial-eval = ["cedar-policy/partial-eval"]
 tempfile = "3.8.0"
 cool_asserts = "2.0"
 criterion = { version = "0.5.1", features = ["html_reports", "async_tokio"] }
-pprof = { version = "0.13.0", features = ["flamegraph"] }
+pprof = { version = "0.14.0", features = ["flamegraph"] }
 
 [[bin]]
 name = "data_gen"
