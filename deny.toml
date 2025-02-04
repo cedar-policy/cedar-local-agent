@@ -10,22 +10,12 @@ ignore = []
 multiple-versions = "deny"
 deny = []
 skip = [
-    { name = "syn", version = "=1.0.109" }, # old dependency from derive_builder
-    { name = "darling", version = "=0.14.4" }, # old dependency from derive_builder
-    { name = "darling_macro", version = "=0.14.4" }, # old dependency from derive_builder
-    { name = "darling_core", version = "=0.14.4" }, # old dependency from derive_builder
-    { name = "bitflags", version = "=1.3.2" }, # old transitive dependency from cedar_policy_core
-    { name = "itertools", version = "=0.11.0" }, # old transitive dependency from lalrpop and criterion
-    { name = "regex-syntax", version = "<=0.7.5" }, # old transitive dependency from cedar_policy_core
-    { name = "windows_aarch64_gnullvm", version = "=0.48.5" }, # old dependency from chrono,lalrpop
-    { name = "windows_aarch64_msvc", version = "=0.48.5" }, # old dependency from chrono,lalrpop
-    { name = "windows_i686_msvc", version = "=0.48.5" }, # old dependency from chrono,lalrpop
-    { name = "windows_i686_gnu", version = "=0.48.5" }, # old dependency from chrono,lalrpop
-    { name = "windows-sys", version = "=0.48.0" }, # old dependency from chrono,lalrpop
-    { name = "windows-targets", version = "=0.48.5" }, # old dependency from chrono,lalrpop
-    { name = "windows_x86_64_gnu", version = "=0.48.5" }, # old dependency from chrono,lalrpop
-    { name = "windows_x86_64_gnullvm", version = "=0.48.5" }, # old dependency from chrono,lalrpop
-    { name = "windows_x86_64_msvc", version = "=0.48.5" }, # old dependency from chrono,lalrpop
+    { name = "windows-sys", version = "=0.52.0" }, # needed by mio, socket2, and term
+    { name = "zerocopy", version = "=0.7.35" }, # two copies needed by zerocopy lmao
+    { name = "wasi", version = "=0.11.0" }, # two copies needed by getrandom
+    { name = "getrandom", version = "=0.2.15" }, # needed by uuid
+    { name = "thiserror", version = "=1.0.69" }, # needed by cedar
+    { name = "thiserror-impl", version = "=1.0.69" }, # needed by cedar
 ]
 skip-tree = []
 
@@ -39,7 +29,6 @@ allow = [
     "Apache-2.0",
     "Apache-2.0 WITH LLVM-exception",
     "MIT",
-    "Unicode-DFS-2016",
-    "CC0-1.0",
+    "Unicode-3.0"
 ]
 exceptions = []

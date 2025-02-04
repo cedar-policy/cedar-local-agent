@@ -948,10 +948,9 @@ mod test {
     use std::str::FromStr;
 
     use cedar_policy::{
-        AuthorizationError, Authorizer, Context, Entities, EntityId, EntityTypeName, EntityUid,
-        PolicyId, PolicySet, Request, Response,
+        AuthorizationError, Authorizer, Context, Decision, Entities, EntityId, EntityTypeName,
+        EntityUid, PolicyId, PolicySet, Request, Response,
     };
-    use cedar_policy_core::authorizer::Decision;
     use serde_json::{from_str, to_string, to_value, Map};
 
     use crate::public::log::error::OcsfException;

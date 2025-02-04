@@ -72,8 +72,8 @@ impl From<Entity> for EntityUidRepr {
 }
 
 fn random_effect() -> Effect {
-    let mut rng = rand::thread_rng();
-    let rand = rng.gen_range(0..2);
+    let mut rng = rand::rng();
+    let rand = rng.random_range(0..2);
 
     if rand == 0 {
         Effect::Permit
@@ -83,8 +83,8 @@ fn random_effect() -> Effect {
 }
 
 fn random_operation(entity_uid: EntityUidRepr) -> Operation {
-    let mut rng = rand::thread_rng();
-    let rand = rng.gen_range(0..2);
+    let mut rng = rand::rng();
+    let rand = rng.random_range(0..2);
 
     if rand == 0 {
         Operation::All
@@ -94,7 +94,7 @@ fn random_operation(entity_uid: EntityUidRepr) -> Operation {
 }
 
 fn random_entity(entities: &Entities) -> Entity {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
 
     entities.iter().choose(&mut rng).unwrap().clone()
 }
