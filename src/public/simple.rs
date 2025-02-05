@@ -279,8 +279,7 @@ mod test {
     use std::sync::Arc;
 
     use async_trait::async_trait;
-    use cedar_policy::{Context, Entities, PolicySet, Request};
-    use cedar_policy_core::authorizer::Decision;
+    use cedar_policy::{Context, Decision, Entities, PolicySet, Request};
 
     use crate::public::log::DEFAULT_REQUESTER_NAME;
     use crate::public::simple::{Authorizer, AuthorizerConfigBuilder};
@@ -427,8 +426,7 @@ mod test_partial {
     use std::sync::Arc;
 
     use async_trait::async_trait;
-    use cedar_policy::{Context, Entities, Policy, PolicyId, PolicySet, Request};
-    use cedar_policy_core::authorizer::Decision;
+    use cedar_policy::{Context, Decision, Entities, Policy, PolicyId, PolicySet, Request};
     use cool_asserts::assert_matches;
 
     use crate::public::log::DEFAULT_REQUESTER_NAME;

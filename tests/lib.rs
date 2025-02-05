@@ -7,8 +7,7 @@ mod test {
     use std::sync::Arc;
     use std::time::Duration;
 
-    use cedar_policy::{Context, Entities, PolicySet, Request, Schema};
-    use cedar_policy_core::authorizer::Decision;
+    use cedar_policy::{Context, Decision, Entities, PolicySet, Request, Schema};
     use tempfile::NamedTempFile;
 
     use cedar_local_agent::public::events::core::{file_inspector_task, RefreshRate};
@@ -567,8 +566,10 @@ mod test {
             .unwrap(),
         );
 
-        let (_, receiver) =
-            file_inspector_task(RefreshRate::FifteenSeconds, temp_file_path.clone());
+        let (_, receiver) = file_inspector_task(
+            RefreshRate::Other(Duration::from_millis(50)),
+            temp_file_path.clone(),
+        );
         let mut test_receiver = receiver.resubscribe();
         let _update_provider_thread =
             update_provider_data_task(policy_set_provider.clone(), receiver);

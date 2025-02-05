@@ -123,8 +123,11 @@ pub fn file_inspector_task(
 
             {
                 let mut file = File::open(self.file_path.clone())?;
+                // We can remove the dep on fs2 if this makes it into stable rust
+                #[expect(unstable_name_collisions)]
                 file.lock_shared()?;
                 file.read_to_string(&mut file_data)?;
+                #[expect(unstable_name_collisions)]
                 file.unlock()?;
             }
 

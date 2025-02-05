@@ -9,9 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Update to Cedar 4 (requires breaking change)
+
 ### Changed
 
+- Remove dependency on `cedar-policy-core`, `cedar-policy-formatter`, and `cedar-policy-validator`.
+- Update `thiserror` and `derive_builder` versions
+
 ### Fixed
+
+- Remove unused deps
 
 ## 2.0.0 - 2024-03-13
 Cedar Local Agent Version: 2.0.0

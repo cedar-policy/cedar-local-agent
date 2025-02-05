@@ -14,11 +14,10 @@ bench = false
 # Utilities
 async-trait = "0.1.71"
 chrono = "0.4.26"
-derive_builder = "0.12.0"
+derive_builder = "0.20.2"
 futures = { version = "0.3.31", features = ["std"] }
 fs2 = "0.4.3"
-once_cell = "1.18.0"
-rand = "0.8.5"
+rand = "0.9.0"
 serde = { version = "1.0.166", features = ["derive"] }
 serde_json = "1.0.100"
 serde_repr = "0.1.16"
@@ -27,16 +26,13 @@ tokio = { version = "1.0", features = ["full", "signal", "sync", "parking_lot"] 
 uuid = { version = "1.4.1", features = ["v4"] }
 
 # Error, Logging, Tracing
-thiserror = "1.0.41"
+thiserror = "2.0.11"
 tracing = "0.1.37"
 tracing-core = "0.1.31"
 tracing-subscriber = "0.3.17"
 
 # Cedar
 cedar-policy = "4.2.0"
-cedar-policy-core = "4.2.0"
-cedar-policy-formatter = "4.2.0"
-cedar-policy-validator = "4.2.0"
 
 [features]
 # Experimental features.
@@ -48,7 +44,6 @@ partial-eval = ["cedar-policy/partial-eval"]
 tempfile = "3.8.0"
 cool_asserts = "2.0"
 criterion = { version = "0.5.1", features = ["html_reports", "async_tokio"] }
-pprof = { version = "0.14.0", features = ["flamegraph"] }
 
 [[bin]]
 name = "data_gen"
