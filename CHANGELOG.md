@@ -9,15 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Update to Cedar 4 (requires breaking change)
-
 ### Changed
-
-- Remove dependency on `cedar-policy-core`, `cedar-policy-formatter`, and `cedar-policy-validator`.
-- Update `thiserror` and `derive_builder` versions
 
 ### Fixed
 
+## 3.0.0 2025-04-28
+- Update to Cedar 4 (requires breaking change)
+- Remove dependency on `cedar-policy-core`, `cedar-policy-formatter`, and `cedar-policy-validator`.
+- Update `thiserror` and `derive_builder` versions
 - Remove unused deps
 
 ## 2.0.0 - 2024-03-13

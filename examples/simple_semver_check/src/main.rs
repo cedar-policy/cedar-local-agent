@@ -4,15 +4,14 @@ use cedar_local_agent::public::file::entity_provider::EntityProvider;
 use cedar_local_agent::public::file::policy_set_provider::PolicySetProvider;
 use cedar_local_agent::public::file::{entity_provider, policy_set_provider};
 use cedar_local_agent::public::simple::{Authorizer, AuthorizerConfigBuilder};
-use cedar_policy::{Context, Entities, Request};
-use cedar_policy_core::authorizer::Decision;
+use cedar_policy::{Context, Entities, Request, Decision};
 use std::sync::Arc;
 
 fn construct_request() -> Request {
     Request::new(
-        Some("Principal::\"request\"".parse().unwrap()),
-        Some("Action::\"request\"".parse().unwrap()),
-        Some("Resource::\"request\"".parse().unwrap()),
+        "Principal::\"request\"".parse().unwrap(),
+        "Action::\"request\"".parse().unwrap(),
+        "Resource::\"request\"".parse().unwrap(),
         Context::empty(),
         None
     ).unwrap()

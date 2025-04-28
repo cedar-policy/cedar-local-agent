@@ -11,6 +11,5 @@ edition = "2021"
 # Update the branch here when a new version is released
 cedar-local-agent = { path="../.." }
 # When creating a new release, update the branch here
-cedar-policy = "3.1.0"
-cedar-policy-core = "3.1.0"
+cedar-policy = "4"
 tokio = "1.36.0"
