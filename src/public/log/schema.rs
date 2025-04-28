@@ -339,7 +339,7 @@ fn filter_request(request: &Request, entities: &Entities, fields: &FieldSet) -> 
 
     if fields.principal {
         builder.principal(request.principal().cloned());
-    };
+    }
     if fields.action {
         builder.action(request.action().cloned());
     }
@@ -403,17 +403,17 @@ impl OpenCyberSecurityFrameworkBuilder {
     /// If the `OpenCyberSecurityFrameworkBuilder` does not pass validation checks, like exceeding
     /// the maximum allowed length for the `activity_name`, it will result in an `OcsfFieldsValidationError`.
     fn validate_ocsf_fields(&self) -> Result<(), OcsfException> {
-        let is_enrichments_valid: bool = self.enrichments.as_ref().map_or(true, |enrichments| {
+        let is_enrichments_valid: bool = self.enrichments.as_ref().is_none_or(|enrichments| {
             enrichments
                 .as_ref()
-                .map_or(true, |vec| vec.len() < ALLOWED_ENRICHMENT_ARRAY_LEN)
+                .is_none_or(|vec| vec.len() < ALLOWED_ENRICHMENT_ARRAY_LEN)
         });
 
         let is_activity_name_valid: bool =
-            self.activity_name.as_ref().map_or(true, |activity_name| {
+            self.activity_name.as_ref().is_none_or(|activity_name| {
                 activity_name
                     .as_ref()
-                    .map_or(true, |s| s.len() < ALLOWED_ACTIVITY_NAME_LEN)
+                    .is_none_or(|s| s.len() < ALLOWED_ACTIVITY_NAME_LEN)
             });
 
         if is_enrichments_valid && is_activity_name_valid {

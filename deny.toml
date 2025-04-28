@@ -7,15 +7,10 @@ targets = []
 ignore = []
 
 [bans]
-multiple-versions = "deny"
 deny = []
 skip = [
     { name = "windows-sys", version = "=0.52.0" }, # needed by mio, socket2, and term
-    { name = "zerocopy", version = "=0.7.35" }, # two copies needed by zerocopy lmao
     { name = "wasi", version = "=0.11.0" }, # two copies needed by getrandom
-    { name = "getrandom", version = "=0.2.15" }, # needed by uuid
-    { name = "thiserror", version = "=1.0.69" }, # needed by cedar
-    { name = "thiserror-impl", version = "=1.0.69" }, # needed by cedar
 ]
 skip-tree = []
 
