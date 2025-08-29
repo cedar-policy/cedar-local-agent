@@ -29,7 +29,7 @@ uuid = { version = "1.4.1", features = ["v4"] }
 thiserror = "2.0.11"
 tracing = "0.1.37"
 tracing-core = "0.1.31"
-tracing-subscriber = "0.3.17"
+tracing-subscriber = "0.3.20"
 
 # Cedar
 cedar-policy = "4.2.0"
